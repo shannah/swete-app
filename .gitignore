@@ -1,0 +1,9 @@
+dist
+build
+private
+.cn1
+*.class
+JavaSE.jar
+CodenameOne.jar
+CodenameOne_SRC.zip
+CodeNameOneBuildClient.jar
