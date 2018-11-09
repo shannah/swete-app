@@ -7,3 +7,6 @@ JavaSE.jar
 CodenameOne.jar
 CodenameOne_SRC.zip
 CodeNameOneBuildClient.jar
+.netbeans
+dependencies/*
+!dependencies/empty
