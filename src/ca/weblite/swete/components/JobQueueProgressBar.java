@@ -29,6 +29,8 @@ public class JobQueueProgressBar extends Container implements JobQueueListener {
     
     public JobQueueProgressBar(JobQueue queue) {
         super(new BorderLayout());
+        this.queue = queue;
+        
         progress = new Slider();
         progress.setInfinite(true);
         description = new Label();
@@ -40,7 +42,9 @@ public class JobQueueProgressBar extends Container implements JobQueueListener {
             dialog.showPopupDialog(moreButton);
         });
         
-        add(BorderLayout.CENTER, progress).add(BorderLayout.EAST, moreButton).add(BorderLayout.WEST, description);
+        add(BorderLayout.CENTER, progress)
+                .add(BorderLayout.EAST, moreButton)
+                .add(BorderLayout.WEST, description);
         
     }
 
@@ -48,6 +52,9 @@ public class JobQueueProgressBar extends Container implements JobQueueListener {
         if (queue.getRunningJobs().size() > 0) {
             description.setText(queue.getRunningJobs().size()+" tasks running");
             progress.setVisible(true);
+            progress.setInfinite(false);
+            progress.setProgress(queue.getCurrentlyRunningJob().getProgressPercent());
+            
         } else {
             description.setText("");
             progress.setVisible(false);
@@ -69,4 +76,20 @@ public class JobQueueProgressBar extends Container implements JobQueueListener {
     public void jobChanged(BackgroundJob job) {
         update();
     }
+
+    @Override
+    protected void initComponent() {
+        super.initComponent();
+        queue.addListener(this);
+    }
+
+    @Override
+    protected void deinitialize() {
+        queue.removeListener(this);
+        super.deinitialize();
+    }
+    
+    
+    
+    
 }

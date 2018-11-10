@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -186,7 +187,7 @@ public class SweteClient {
     }
     
     public void refreshPageSnapshotAndWait(String url, Snapshot snapshot) throws IOException {
-        XFCustomAction action = new XFCustomAction("refresh-page-snapshot");
+        XFCustomAction action = new XFCustomAction("refresh_page_snapshot");
         action.put("snapshot_id", snapshot.getSnapshotId())
                 .put("page", url);
         ConnectionRequest req = xfClient.postSync(action);
@@ -201,6 +202,48 @@ public class SweteClient {
             throw new IOException("Failed to refresh the page snapshot due to a network problem.");
         }
         
+    }
+    
+    public void load(WebSite site) throws IOException {
+        XFQuery query = new XFQuery("websites")
+                .matches("website_id", site.getSiteId())
+                .findOne();
+        XFRowSet rs = xfClient.findAndWait(query);
+        if (rs.getFound() == 0) {
+            throw new IOException("Snapshot not found");
+        }
+        XFRecord record = rs.iterator().next();
+        loadWebSite(site, record);
+    }
+    
+    private void loadWebSite(WebSite site, XFRecord record) {
+        site.setCurrentSnapshotId(record.getInteger("current_snapshot_id"));
+        site.setProxyLanguage(record.getString("target_language"));
+        site.setSourceLanguage(record.getString("source_language"));
+        
+    }
+    
+    public void save(WebSite site) throws IOException {
+        XFQuery query = new XFQuery("websites")
+                .matches("website_id", site.getSiteId())
+                .findOne();
+        XFRowSet rs = xfClient.findAndWait(query);
+        if (rs.getFound() == 0) {
+            throw new IOException("Snapshot not found");
+        }
+        XFRecord record = rs.iterator().next();
+        
+        copyTo(site, record);
+        record = xfClient.saveAndWait(record);
+        loadWebSite(site, record);
+        
+        
+    }
+    
+    private void copyTo(WebSite website, XFRecord rec) {
+        rec.set("current_snapshot_id", website.getCurrentSnapshotId());
+        rec.set("target_language", website.getProxyLanguage());
+        rec.set("source_language", website.getSourceLanguage());
     }
     
     public void load(Snapshot snapshot) throws IOException {
@@ -223,11 +266,16 @@ public class SweteClient {
         if (loadPages) {
             List<Snapshot.SnapshotPage> pages = snapshot.getPages();
             pages.clear();
-            Result pageStatusJson = Result.fromContent(record.getString("pagestatus"), Result.JSON);
+            boolean hasPageStatus = false;
+            Result pageStatusJson = null;
+            if (record.getString("pagestatus") != null && !record.getString("pagestatus").isEmpty()) {
+                pageStatusJson = Result.fromContent(record.getString("pagestatus"), Result.JSON);
+                hasPageStatus = true;
+            }
             String[] pagelist = Util.split(record.getString("pagelist"), "\n");
             for (String line : pagelist) {
                 line = line.trim();
-                Map status = (Map)pageStatusJson.get(line);
+                Map status = !hasPageStatus ? new HashMap() : (Map)pageStatusJson.get(line);
                 int statusCode = status.containsKey("statusCode") ? ((Number)status.get("statusCode")).intValue() : -1;
                 long timestamp = status.containsKey("timestamp") ? ((Number)status.get("timestamp")).longValue() * 1000l : 0;
                 String statusString = status.containsKey("statusString") ? (String)status.get("statusString") : null;
@@ -246,11 +294,39 @@ public class SweteClient {
         XFRowSet rs = xfClient.findAndWait(query);
         website.getSnapshots().clear();
         for (XFRecord rec : rs) {
-            Snapshot snapshot = new Snapshot(website, rec.getString("snapshot_id"));
+            Snapshot snapshot = new Snapshot(website, rec.getInteger("snapshot_id"));
             loadSnapshot(snapshot, rec, false);
             website.getSnapshots().add(snapshot);
         }
                 
+        
+    }
+    
+    public Snapshot createNewSnapshot() throws IOException {
+        site.setWhitelist(loadWhitelist());
+        XFRecord rec = new XFRecord(xfClient, "snapshots", null);
+        rec.set("website_id", site.getSiteId());
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (String url : site.getWhitelist()) {
+            if (url.startsWith(site.getProxyUrl())) {
+                url = url.substring(site.getProxyUrl().length());
+            } else if (url.startsWith(site.getSrcUrl())) {
+                url = url.substring(site.getSrcUrl().length());
+            }
+            if (first) {
+                first = false;
+            } else {
+                sb.append("\n");
+            }
+            sb.append(url);
+        }
+        
+        rec.set("pagelist", sb.toString());
+        rec = xfClient.saveAndWait(rec);
+        Snapshot out = new Snapshot(site, rec.getInt("snapshot_id"));
+        this.loadSnapshot(out, rec, true);
+        return out;
         
     }
 }

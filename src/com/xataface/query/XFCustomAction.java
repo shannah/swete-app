@@ -38,5 +38,10 @@ public class XFCustomAction {
         return this;
     }
     
+    public XFCustomAction put(String key, Integer value) {
+        return put(key, value == null ? "" : String.valueOf(value));
+        
+    }
+    
     
 }

@@ -31,7 +31,7 @@ import java.util.TimeZone;
 public class XFRecord {
     private final XFClient client;
     private String table;
-    private String id;
+    private String id, title;
     private Result data;
     private Map<String,Object> updates;
     private Map<String,FileData> fileUpdates;
@@ -148,6 +148,14 @@ public class XFRecord {
             return d.mimetype;
         }
         return null;
+    }
+    
+    public Integer getInteger(String column) {
+        if (changed(column)) {
+            return (Integer)updates.get(column);
+        }
+        Object d = data.get(column);
+        return d == null ? null : data.getAsInteger(column);
     }
     
     public int getInt(String column) {
@@ -401,6 +409,10 @@ public class XFRecord {
         updates().put(column, value);
     }
     
+    public void set(String column, Integer value) {
+        updates().put(column, value);
+    }
+    
     public void set(String column, long value) {
         updates().put(column, value);
     }
@@ -504,5 +516,12 @@ public class XFRecord {
         }
         return out;
         
+    }
+
+    /**
+     * @param title the title to set
+     */
+    public void setTitle(String title) {
+        this.title = title;
     }
 }

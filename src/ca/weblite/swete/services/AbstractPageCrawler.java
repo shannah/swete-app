@@ -9,6 +9,7 @@ import ca.weblite.swete.SweteClient;
 import ca.weblite.swete.models.WebSite;
 import com.codename1.io.ConnectionRequest;
 import com.codename1.io.Log;
+import com.codename1.io.Util;
 import com.codename1.ui.events.ActionEvent;
 import com.codename1.ui.events.ActionListener;
 import com.codename1.ui.util.EventDispatcher;
@@ -21,7 +22,7 @@ import java.util.List;
  * @author shannah
  */
 public abstract class AbstractPageCrawler implements BackgroundJob {
-
+    private int throttleDelay = 2000;
     /**
      * @return the jobDescription
      */
@@ -102,6 +103,7 @@ public abstract class AbstractPageCrawler implements BackgroundJob {
                 status.inProgress = false;
 
                 listeners.fireActionEvent(new ActionEvent(this));
+                Util.sleep(throttleDelay);
 
             }
             complete = true;

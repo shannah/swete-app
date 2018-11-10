@@ -8,7 +8,6 @@ package ca.weblite.swete.forms;
 import ca.weblite.swete.SweteApp;
 import ca.weblite.swete.components.BrowserToolbar;
 import ca.weblite.swete.components.JobQueueProgressBar;
-import ca.weblite.swete.components.SnapshotsDialog;
 import ca.weblite.swete.components.WhitelistSelectionDialog;
 import ca.weblite.swete.models.Session;
 import ca.weblite.swete.models.WebSite;
@@ -19,6 +18,7 @@ import com.codename1.components.SplitPane;
 import com.codename1.components.Switch;
 import com.codename1.components.ToastBar;
 import com.codename1.components.ToastBar.Status;
+import com.codename1.io.Log;
 import com.codename1.ui.BrowserComponent;
 import com.codename1.ui.Button;
 import com.codename1.ui.CN;
@@ -60,9 +60,10 @@ public class SiteForm extends Form implements JobQueueListener {
         setEnableCursors(true);
         setTitle(site.getName());
         
-        toolbar.addCommandToRightSideMenu("Snapshots", null, e->{
-            SnapshotsDialog snapshots = new SnapshotsDialog(website);
-            snapshots.show(0, 0, 0, 0);
+        toolbar.addMaterialCommandToRightSideMenu("Manage Snapshots", FontImage.MATERIAL_PAGES, e->{
+            SnapshotsForm snapshots = new SnapshotsForm(website);
+            Log.p("Showing snapshots form");
+            snapshots.show();
         });
         
         final Form backForm = CN.getCurrentForm();
@@ -93,6 +94,7 @@ public class SiteForm extends Form implements JobQueueListener {
         splitPane = new SplitPane(new SplitPane.Settings().preferredInset("50%"), srcBrowser, proxyBrowser);
         
         srcBrowser.addWebEventListener("onLoad", e->{
+            System.out.println("In onLoad");
             urlField.setText(srcBrowser.getURL());
             String newUrl = website.getProxyUrlForPage(srcBrowser.getURL());
             if (!newUrl.equals(proxyBrowser.getURL())) {
@@ -101,6 +103,7 @@ public class SiteForm extends Form implements JobQueueListener {
         });
         BrowserToolbar btoolbar = new BrowserToolbar();
         proxyBrowser.addWebEventListener("onLoad", e->{
+            
             String snapshotsCookie = getCookieAndWait(proxyBrowser, "--swete-static");
             System.out.println("Snapshots cookie is "+snapshotsCookie);
             if (snapshotsCookie == null || !"true".equals(snapshotsCookie)) {
@@ -300,16 +303,19 @@ public class SiteForm extends Form implements JobQueueListener {
     @Override
     public void jobAdded(BackgroundJob job) {
         jobQueueProgressBar.setVisible(getJobQueue().getCurrentlyRunningJob() != null);
+        revalidate();
     }
 
     @Override
     public void jobRemoved(BackgroundJob job) {
         jobQueueProgressBar.setVisible(getJobQueue().getCurrentlyRunningJob() != null);
+        revalidate();
     }
 
     @Override
     public void jobChanged(BackgroundJob job) {
         jobQueueProgressBar.setVisible(getJobQueue().getCurrentlyRunningJob() != null);
+        revalidate();
     }
 
     @Override

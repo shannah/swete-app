@@ -241,9 +241,11 @@ public class XFClient {
         req.setReadResponseForErrors(true);
         req.setUrl(url);
         req.setHttpMethod("POST");
-        req.setPost(false);
+        req.setPost(true);
+        req.setFailSilently(true);
         action.setupRequest(req);
         req.addArgument("--no-prompt", "1");
+        
         
         req.addResponseListener(e -> {
 
@@ -332,7 +334,14 @@ public class XFClient {
                     rowset.setFound(stats.getAsInteger("found"));
                     rowset.setQuery(query);
                     for (Map row : results) {
-                        rowset.add(new XFRecord(this, query.getTable(), Result.fromContent(row), row.keySet()));
+                        XFRecord rec = new XFRecord(this, query.getTable(), Result.fromContent(row), row.keySet());
+                        if (row.containsKey("__id__")) {
+                            rec.setId((String)row.get("__id__"));
+                        }
+                        if (row.containsKey("__title__")) {
+                            rec.setTitle((String)row.get("__title__"));
+                        }
+                        rowset.add(rec);
                     }
 
                     Display.getInstance().callSerially(() -> {
@@ -427,6 +436,31 @@ public class XFClient {
         } else {
             req.addArgument(key, val);
         }
+    }
+    
+    
+    public XFRecord saveAndWait(XFRecord record) throws IOException  {
+        Object[] out = new Object[1];
+        boolean[] complete = new boolean[1];
+        Display.getInstance().invokeAndBlock(() -> {
+            save(record, r -> {
+                out[0] = r;
+                complete[0] = true;
+                synchronized (complete) {
+                    complete.notifyAll();
+                }
+            });
+
+            while (!complete[0]) {
+                synchronized (complete) {
+                    try {
+                        complete.wait();
+                    } catch (Exception ex) {
+                    }
+                }
+            }
+        });
+        return (XFRecord) out[0];
     }
     
     public void save(XFRecord record, SuccessCallback<XFRecord> callback) {

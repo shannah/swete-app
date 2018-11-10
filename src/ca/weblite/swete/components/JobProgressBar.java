@@ -52,6 +52,7 @@ public class JobProgressBar extends Container implements ActionListener {
         } else if (job.isInProgress()) {
             progressBar.setVisible(true);
             progressBar.setProgress(job.getProgressPercent());
+            progressBar.setInfinite(false);
             cancelButton.setVisible(false);
             if (job.getComplete() == job.getSucceeded()) {
                 progressLabel.setText("Processing "+job.getComplete()+" of "+job.getTotal());
@@ -63,6 +64,8 @@ public class JobProgressBar extends Container implements ActionListener {
             cancelButton.setVisible(true);
             progressBar.setVisible(false);
         }
+        
+        revalidate();
 
     }
 

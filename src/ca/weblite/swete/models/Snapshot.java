@@ -57,7 +57,7 @@ public class Snapshot {
         this.active = active;
     }
     private WebSite webSite;
-    private String snapshotId;
+    private int snapshotId;
     private Date dateCreated, dateCompleted;
     private List<SnapshotPage> pages = new ArrayList<SnapshotPage>();
     private boolean active;
@@ -85,7 +85,7 @@ public class Snapshot {
                 
     }
     
-    public Snapshot(WebSite website, String id) {
+    public Snapshot(WebSite website, int id) {
         this.webSite = website;
         this.snapshotId = id;
     }
@@ -94,7 +94,7 @@ public class Snapshot {
         return webSite;
     }
     
-    public String getSnapshotId() {
+    public int getSnapshotId() {
         return snapshotId;
     }
     

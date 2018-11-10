@@ -20,6 +20,9 @@ import java.util.List;
  */
 public class WebSite implements Externalizable {
 
+    private Integer currentSnapshotId;
+    
+    
     /**
      * @return the snapshots
      */
@@ -213,5 +216,19 @@ public class WebSite implements Externalizable {
     
     public void setWhitelist(String[] whitelist) {
         this.whitelist = whitelist;
+    }
+
+    /**
+     * @return the currentSnapshotId
+     */
+    public Integer getCurrentSnapshotId() {
+        return currentSnapshotId;
+    }
+
+    /**
+     * @param currentSnapshotId the currentSnapshotId to set
+     */
+    public void setCurrentSnapshotId(Integer currentSnapshotId) {
+        this.currentSnapshotId = currentSnapshotId;
     }
 }

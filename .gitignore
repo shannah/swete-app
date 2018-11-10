@@ -10,3 +10,4 @@ CodeNameOneBuildClient.jar
 .netbeans
 dependencies/*
 !dependencies/empty
+.DS_Store
