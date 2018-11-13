@@ -187,10 +187,10 @@ public class PreviewForm extends Form {
         this.snapshot = snap;
         if (snapshot == null) {
             BrowserUtil.disableSnapshots(browser);
-            //getToolbar().findCommandComponent(snapshotsMenu.getCommand()).setText("Snapshot: None");
+            getToolbar().findCommandComponent(snapshotsMenu.getCommand()).setText("Snapshot: None");
         } else {
             BrowserUtil.enableSnapshots(browser, snap);
-            //getToolbar().findCommandComponent(snapshotsMenu.getCommand()).setText("Snapshot: "+snap.getSnapshotId());
+            getToolbar().findCommandComponent(snapshotsMenu.getCommand()).setText("Snapshot: "+snap.getSnapshotId());
         }
         
    }
