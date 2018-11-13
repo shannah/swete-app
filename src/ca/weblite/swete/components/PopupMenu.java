@@ -66,7 +66,7 @@ public class PopupMenu extends InteractionDialog {
         if (cmd != null) {
             return cmd;
         }
-        Command out = Command.createMaterial(getCommandLabel(), getMaterialIcon(), e->{
+        Command out = Command.createMaterial(getCommandLabel(), getMaterialIcon(),  e->{
             showPopupDialog(e.getComponent());
         });
         cmd = out;
