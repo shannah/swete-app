@@ -8,6 +8,7 @@ package ca.weblite.swete.components;
 import com.codename1.components.InteractionDialog;
 import com.codename1.ui.Button;
 import com.codename1.ui.Command;
+import com.codename1.ui.Component;
 import com.codename1.ui.Container;
 import com.codename1.ui.FontImage;
 import com.codename1.ui.layouts.BorderLayout;
@@ -67,11 +68,23 @@ public class PopupMenu extends InteractionDialog {
             return cmd;
         }
         Command out = Command.createMaterial(getCommandLabel(), getMaterialIcon(),  e->{
-            showPopupDialog(e.getComponent());
+            if (!isInitialized()) {
+                
+                showPopupDialog(e.getComponent());
+            } else {
+                dispose();
+            }
         });
         cmd = out;
         return out;
     }
+
+    @Override
+    public void showPopupDialog(Component c) {
+        super.showPopupDialog(c); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    
     
     public PopupMenu addCommand(Command command) {
         commands.add(command);

@@ -94,32 +94,17 @@ public class PreviewForm extends Form {
             dialog.showPopupDialog(showWhitelistButton);
         });
         
+        PopupMenu menu = new PopupMenu();
+        menu.addCommand(Command.createMaterial("Open Source Page in Browser", FontImage.MATERIAL_OPEN_IN_BROWSER, e->{
+            CN.execute(site.getSourceUrlForPage(browser.getURL()));
+        }));
         
-        getToolbar().addMaterialCommandToRightBar("", FontImage.MATERIAL_MORE_VERT, e->{
-            InteractionDialog dlg = new InteractionDialog(BoxLayout.y());
-            dlg.setDisposeWhenPointerOutOfBounds(true);
-            Button openSourcePage = new Button("Open Source Page in Browser");
-            openSourcePage.setMaterialIcon(FontImage.MATERIAL_OPEN_IN_BROWSER);
-            openSourcePage.addActionListener(e2->{
-                CN.execute(site.getSourceUrlForPage(browser.getURL()));
-            });
-            
-            Button openProxyPage = new Button("Open Translated Page in Browser");
-            openProxyPage.setMaterialIcon(FontImage.MATERIAL_OPEN_IN_BROWSER);
-            openProxyPage.addActionListener(e2->{
-                CN.execute(site.getProxyUrlForPage(browser.getURL()));
-            });
-            
-            $(openSourcePage, openProxyPage)
-                    .setTextPosition(Component.RIGHT)
-                    .selectAllStyles().setAlignment(Component.LEFT);
-            
-            dlg.add(openSourcePage);
-            dlg.add(openProxyPage);
-            
-            
-            dlg.showPopupDialog(getToolbar().findCommandComponent(e.getCommand()));
-        });
+        menu.addCommand(Command.createMaterial("Open Translated Page in Browser", FontImage.MATERIAL_OPEN_IN_BROWSER, e->{
+            CN.execute(site.getProxyUrlForPage(browser.getURL()));
+        }));
+        
+        getToolbar().addCommandToRightBar(menu.getCommand());
+        
         
         snapshotsMenu = new PopupMenu();
         snapshotsMenu.setMaterialIcon(FontImage.MATERIAL_ARROW_DROP_DOWN);
@@ -202,10 +187,10 @@ public class PreviewForm extends Form {
         this.snapshot = snap;
         if (snapshot == null) {
             BrowserUtil.disableSnapshots(browser);
-            getToolbar().findCommandComponent(snapshotsMenu.getCommand()).setText("Snapshot: None");
+            //getToolbar().findCommandComponent(snapshotsMenu.getCommand()).setText("Snapshot: None");
         } else {
             BrowserUtil.enableSnapshots(browser, snap);
-            getToolbar().findCommandComponent(snapshotsMenu.getCommand()).setText("Snapshot: "+snap.getSnapshotId());
+            //getToolbar().findCommandComponent(snapshotsMenu.getCommand()).setText("Snapshot: "+snap.getSnapshotId());
         }
         
    }
