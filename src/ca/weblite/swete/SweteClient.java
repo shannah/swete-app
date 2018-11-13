@@ -8,8 +8,11 @@ package ca.weblite.swete;
 import ca.weblite.swete.models.Snapshot;
 import ca.weblite.swete.models.Snapshot.PageStatus;
 import ca.weblite.swete.models.Snapshot.SnapshotPage;
+import ca.weblite.swete.models.TranslationStats;
 import ca.weblite.swete.models.WebSite;
 import com.codename1.io.ConnectionRequest;
+import com.codename1.io.JSONParser;
+import com.codename1.io.Log;
 import com.codename1.io.NetworkManager;
 import com.codename1.io.URL;
 import com.codename1.io.Util;
@@ -23,6 +26,7 @@ import com.xataface.query.XFRecord;
 import com.xataface.query.XFRowSet;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -128,6 +132,7 @@ public class SweteClient {
         site.setSrcUrl(rec.getString("website_url"));
         site.setSourceLanguage(rec.getString("source_language"));
         site.setProxyLanguage(rec.getString("target_language"));
+        site.setCurrentSnapshotId(rec.getInteger("current_snapshot_id"));
                 
         
         
@@ -209,7 +214,8 @@ public class SweteClient {
                 .matches("website_id", site.getSiteId())
                 .findOne();
         XFRowSet rs = xfClient.findAndWait(query);
-        if (rs.getFound() == 0) {
+        
+        if (rs == null || rs.getFound() == 0) {
             throw new IOException("Snapshot not found");
         }
         XFRecord record = rs.iterator().next();
@@ -240,6 +246,28 @@ public class SweteClient {
         
     }
     
+    public void save(Snapshot snapshot) throws IOException {
+        XFQuery query = new XFQuery("snapshots")
+                .matches("snapshot_id", snapshot.getSnapshotId())
+                .findOne();
+        XFRowSet rs = xfClient.findAndWait(query);
+        if (rs.getFound() == 0) {
+            throw new IOException("Snapshot not found");
+        }
+        XFRecord record = rs.iterator().next();
+        
+        copyTo(snapshot, record);
+        record = xfClient.saveAndWait(record);
+        loadSnapshot(snapshot, record, false);
+        
+        
+    }
+    
+    private void copyTo(Snapshot snapshot, XFRecord record) {
+        record.set("date_completed", snapshot.getDateCompleted());
+        
+    }
+    
     private void copyTo(WebSite website, XFRecord rec) {
         rec.set("current_snapshot_id", website.getCurrentSnapshotId());
         rec.set("target_language", website.getProxyLanguage());
@@ -267,17 +295,42 @@ public class SweteClient {
             List<Snapshot.SnapshotPage> pages = snapshot.getPages();
             pages.clear();
             boolean hasPageStatus = false;
-            Result pageStatusJson = null;
+            
+            Map statusMap = null;
             if (record.getString("pagestatus") != null && !record.getString("pagestatus").isEmpty()) {
-                pageStatusJson = Result.fromContent(record.getString("pagestatus"), Result.JSON);
-                hasPageStatus = true;
+                //pageStatusJson = Result.fromContent(record.getString("pagestatus"), Result.JSON);
+                JSONParser parser = new JSONParser();
+                try {
+                    statusMap = parser.parseJSON(
+                            new InputStreamReader(
+                                    new ByteArrayInputStream(record.getString("pagestatus").getBytes("UTF-8"))));
+                    
+                    hasPageStatus = true;
+                } catch (IOException ex){
+                    Log.e(ex);
+                }
             }
+            
             String[] pagelist = Util.split(record.getString("pagelist"), "\n");
             for (String line : pagelist) {
                 line = line.trim();
-                Map status = !hasPageStatus ? new HashMap() : (Map)pageStatusJson.get(line);
-                int statusCode = status.containsKey("statusCode") ? ((Number)status.get("statusCode")).intValue() : -1;
-                long timestamp = status.containsKey("timestamp") ? ((Number)status.get("timestamp")).longValue() * 1000l : 0;
+                if (line.isEmpty()) {
+                    continue;
+                }
+                System.out.println("Checking line "+line);
+                
+                Map status = (Map)statusMap.get(line);
+                if (status == null) {
+                    status = (Map)statusMap.get(site.getProxyUrl()+line);
+                }
+                if (status == null && "/".equals(line)) {
+                    status = (Map)statusMap.get(site.getProxyUrl());
+                }
+                if (status == null) {
+                    status = new HashMap();
+                }
+                int statusCode = status.containsKey("statusCode") && status.get("statusCode") != null ? ((Number)status.get("statusCode")).intValue() : -1;
+                long timestamp = status.containsKey("timestamp") && status.get("statusCode") != null ? ((Number)status.get("timestamp")).longValue() * 1000l : 0;
                 String statusString = status.containsKey("statusString") ? (String)status.get("statusString") : null;
                 SnapshotPage page = new SnapshotPage(line, new PageStatus(statusCode, statusString, new Date(timestamp)));
                 pages.add(page);
@@ -285,9 +338,27 @@ public class SweteClient {
         }
     }
     
+    public void loadTranslationStats() throws IOException {
+        XFCustomAction action = new XFCustomAction("dashboard_site_stats");
+        action.put("--format", "json");
+        action.put("website_id", site.getSiteId());
+        action.put("-table", "websites");
+        Map res = xfClient.postSyncJSON(action);
+        TranslationStats stats = new TranslationStats();
+        res = (Map)((List)res.get("results")).get(0);
+        Result r = Result.fromContent(res);
+        stats.setTotalPhrases(r.getAsInteger("numphrases") );
+        stats.setUntranslatedPhrases(r.getAsInteger("untranslated_phrases"));
+        stats.setTotalWords(r.getAsInteger("numwords"));
+        stats.setUntranslatedWords(r.getAsInteger("untranslated_words"));
+        site.setTranslationStats(stats);
+        
+    }
+    
     public void loadSnapshots(WebSite website) throws IOException {
         XFQuery query = new XFQuery("snapshots")
                 .matches("website_id", site.getSiteId())
+                .limit(999)
                 .select("website_id", "snapshot_id", "active", "date_completed", "date_created")
                 .sort(XFQuery.SortOrder.DESCENDING, "date_created")
                 .findAll();
@@ -328,5 +399,9 @@ public class SweteClient {
         this.loadSnapshot(out, rec, true);
         return out;
         
+    }
+    
+    public void logout() {
+        xfClient.logout(res->{});
     }
 }

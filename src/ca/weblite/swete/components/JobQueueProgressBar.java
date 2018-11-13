@@ -9,6 +9,7 @@ import ca.weblite.swete.services.BackgroundJob;
 import ca.weblite.swete.services.JobQueue;
 import ca.weblite.swete.services.JobQueue.JobQueueListener;
 import com.codename1.ui.Button;
+import com.codename1.ui.CN;
 import com.codename1.ui.Component;
 import com.codename1.ui.Container;
 import com.codename1.ui.FontImage;
@@ -58,8 +59,9 @@ public class JobQueueProgressBar extends Container implements JobQueueListener {
         } else {
             description.setText("");
             progress.setVisible(false);
+            progress.setInfinite(true);
         }
-        revalidate();
+        revalidateWithAnimationSafety();
     }
     
     @Override
@@ -81,6 +83,7 @@ public class JobQueueProgressBar extends Container implements JobQueueListener {
     protected void initComponent() {
         super.initComponent();
         queue.addListener(this);
+        CN.callSerially(()->update());
     }
 
     @Override

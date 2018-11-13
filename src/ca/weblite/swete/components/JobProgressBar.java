@@ -7,6 +7,7 @@ package ca.weblite.swete.components;
 
 import ca.weblite.swete.services.BackgroundJob;
 import com.codename1.ui.Button;
+import com.codename1.ui.CN;
 import com.codename1.ui.Container;
 import com.codename1.ui.Label;
 import com.codename1.ui.Slider;
@@ -35,10 +36,19 @@ public class JobProgressBar extends Container implements ActionListener {
         progressBar.setMinValue(0);
         progressBar.setMaxValue(100);
         cancelButton = new Button("Cancel");
+        cancelButton.addActionListener(e->{
+            CN.callSerially(()->cancel());
+        });
         add(description).add(progressLabel).add(BorderLayout.center(progressBar).add(BorderLayout.EAST, cancelButton));
         
     }
     
+    
+    private void cancel() {
+        if (!job.isCancelled() && !job.isComplete()) {
+            job.cancel();
+        }
+    }
     private void update() {
         description.setText(job.getJobDescription());
         if (job.isCancelled()) {
@@ -53,7 +63,7 @@ public class JobProgressBar extends Container implements ActionListener {
             progressBar.setVisible(true);
             progressBar.setProgress(job.getProgressPercent());
             progressBar.setInfinite(false);
-            cancelButton.setVisible(false);
+            cancelButton.setVisible(true);
             if (job.getComplete() == job.getSucceeded()) {
                 progressLabel.setText("Processing "+job.getComplete()+" of "+job.getTotal());
             } else {
@@ -65,7 +75,7 @@ public class JobProgressBar extends Container implements ActionListener {
             progressBar.setVisible(false);
         }
         
-        revalidate();
+        revalidateWithAnimationSafety();
 
     }
 
@@ -83,6 +93,7 @@ public class JobProgressBar extends Container implements ActionListener {
     protected void initComponent() {
         super.initComponent();
         job.addProgressListener(this);
+        CN.callSerially(()->update());
     }
 
     @Override

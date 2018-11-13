@@ -202,6 +202,18 @@ public class XFClient {
         NetworkManager.getInstance().addToQueue(req);
     }
     
+    public Map postSyncJSON(XFCustomAction action) throws IOException  {
+        ConnectionRequest req = postSync(action);
+        if (req.getResponseCode() >= 200 && req.getResponseCode() < 300) {
+            JSONParser parser = new JSONParser();
+            return parser.parseJSON(new InputStreamReader(new ByteArrayInputStream(req.getResponseData())));
+        } else {
+            throw new IOException("Failed to get JSON.  Response code "+req.getResponseCode());
+        }
+        
+        
+    }
+    
     public ConnectionRequest postSync(XFCustomAction action) {
         Object[] out = new Object[1];
         boolean[] complete = new boolean[1];
@@ -440,16 +452,31 @@ public class XFClient {
     
     
     public XFRecord saveAndWait(XFRecord record) throws IOException  {
-        Object[] out = new Object[1];
+        final Object[] out = new Object[1];
+        final Throwable[] outError = new Throwable[1];
         boolean[] complete = new boolean[1];
-        Display.getInstance().invokeAndBlock(() -> {
-            save(record, r -> {
+        Callback<XFRecord> callback = new Callback<XFRecord>() {
+            @Override
+            public void onSucess(XFRecord r) {
                 out[0] = r;
                 complete[0] = true;
                 synchronized (complete) {
                     complete.notifyAll();
                 }
-            });
+            }
+
+            @Override
+            public void onError(Object sender, Throwable err, int errorCode, String errorMessage) {
+                outError[0] = err;
+                complete[0] = true;
+                synchronized(complete) {
+                    complete.notifyAll();
+                }
+            }
+            
+        };
+        Display.getInstance().invokeAndBlock(() -> {
+            save(record, callback);
 
             while (!complete[0]) {
                 synchronized (complete) {
@@ -460,6 +487,9 @@ public class XFClient {
                 }
             }
         });
+        if (outError[0] != null) {
+            throw new IOException("Failed to save record "+record, outError[0]);
+        }
         return (XFRecord) out[0];
     }
     
@@ -513,7 +543,11 @@ public class XFClient {
                     if (errorHandler != null) {
                         errorHandler.fireActionEvent(new ActionEvent(ex));
                     }
-                    callback.onSucess(null);
+                    if (callback instanceof Callback) {
+                        ((Callback)callback).onError(this, ex, 0, "Failed to save record "+record);
+                    } else {
+                        callback.onSucess(null);
+                    }
                 }
             }
 

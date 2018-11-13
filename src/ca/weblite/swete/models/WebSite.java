@@ -20,8 +20,22 @@ import java.util.List;
  */
 public class WebSite implements Externalizable {
 
+    /**
+     * @return the translationStats
+     */
+    public TranslationStats getTranslationStats() {
+        return translationStats;
+    }
+
+    /**
+     * @param translationStats the translationStats to set
+     */
+    public void setTranslationStats(TranslationStats translationStats) {
+        this.translationStats = translationStats;
+    }
+
     private Integer currentSnapshotId;
-    
+    private TranslationStats translationStats;
     
     /**
      * @return the snapshots
@@ -153,7 +167,23 @@ public class WebSite implements Externalizable {
     private String sourceLanguage, proxyLanguage;
     
     public String getProxyUrlForPage(String srcUrl) {
-        return proxyUrl + srcUrl.substring(this.srcUrl.length());
+        if (srcUrl.startsWith(this.srcUrl)) {
+            return proxyUrl + srcUrl.substring(this.srcUrl.length());
+        } else if (srcUrl.startsWith(this.proxyUrl)) {
+            return srcUrl;
+        } else {
+            return this.proxyUrl + srcUrl;
+        }
+    }
+    
+    public String getSourceUrlForPage(String srcUrl) {
+        if (srcUrl.startsWith(this.proxyUrl)) {
+            return this.srcUrl + srcUrl.substring(this.proxyUrl.length());
+        } else if (srcUrl.startsWith(this.srcUrl)) {
+            return srcUrl;
+        } else {
+            return this.srcUrl + srcUrl;
+        }
     }
     
     public String getStartCaptureUrl() {

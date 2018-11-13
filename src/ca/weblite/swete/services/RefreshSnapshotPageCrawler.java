@@ -8,6 +8,7 @@ package ca.weblite.swete.services;
 import ca.weblite.swete.models.Snapshot;
 import com.codename1.io.Log;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -36,7 +37,23 @@ public class RefreshSnapshotPageCrawler extends AbstractPageCrawler {
         setURLs(urls.toArray(new String[urls.size()]));
 
     }
+
+    @Override
+    protected void onComplete() {
+        super.onComplete();
+        snapshot.setDateCompleted(new Date());
+        try {
+            client.save(snapshot);
+        } catch (IOException ex) {
+            fireException(ex);
+        }
+        
+    }
     
+    
+    public Snapshot getSnapshot() {
+        return snapshot;
+    }
     
     
     @Override

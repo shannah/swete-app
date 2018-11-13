@@ -107,6 +107,7 @@ public abstract class AbstractPageCrawler implements BackgroundJob {
 
             }
             complete = true;
+            onComplete();
             listeners.fireActionEvent(new ActionEvent(this));
         } finally {
             inProgress = false;
@@ -117,6 +118,10 @@ public abstract class AbstractPageCrawler implements BackgroundJob {
     
     protected abstract RequestResult sendRequest(String url);
     protected void setup() {
+        
+    }
+    
+    protected void onComplete() {
         
     }
     

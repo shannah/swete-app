@@ -23,8 +23,9 @@ public class WelcomeForm extends Form {
         this.settings = settings;
         menu = new WebSitesMenu(settings);
         menu.addActionListener(e->{
-            SiteForm siteForm = new SiteForm(menu.getSelectedWebSite());
-            siteForm.show();
+            //SiteForm siteForm = new SiteForm(menu.getSelectedWebSite());
+            //siteForm.show();
+            new SiteMenuForm(menu.getSelectedWebSite()).show();
         });
         add(BorderLayout.NORTH, new Label("Welcome to SWeTE"));
         

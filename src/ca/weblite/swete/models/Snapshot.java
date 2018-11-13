@@ -63,6 +63,34 @@ public class Snapshot {
     private boolean active;
     
     public static class SnapshotPage {
+
+        /**
+         * @return the page
+         */
+        public String getPage() {
+            return page;
+        }
+
+        /**
+         * @param page the page to set
+         */
+        public void setPage(String page) {
+            this.page = page;
+        }
+
+        /**
+         * @return the status
+         */
+        public PageStatus getStatus() {
+            return status;
+        }
+
+        /**
+         * @param status the status to set
+         */
+        public void setStatus(PageStatus status) {
+            this.status = status;
+        }
         private String page;
         private PageStatus status;
         
@@ -82,6 +110,50 @@ public class Snapshot {
             this.statusString = statusString;
             this.timestamp = timestamp;
         }
+
+        /**
+         * @return the statusCode
+         */
+        public int getStatusCode() {
+            return statusCode;
+        }
+
+        /**
+         * @param statusCode the statusCode to set
+         */
+        public void setStatusCode(int statusCode) {
+            this.statusCode = statusCode;
+        }
+
+        /**
+         * @return the statusString
+         */
+        public String getStatusString() {
+            return statusString;
+        }
+
+        /**
+         * @param statusString the statusString to set
+         */
+        public void setStatusString(String statusString) {
+            this.statusString = statusString;
+        }
+
+        /**
+         * @return the timestamp
+         */
+        public Date getTimestamp() {
+            return timestamp;
+        }
+
+        /**
+         * @param timestamp the timestamp to set
+         */
+        public void setTimestamp(Date timestamp) {
+            this.timestamp = timestamp;
+        }
+        
+        
                 
     }
     
@@ -105,15 +177,15 @@ public class Snapshot {
     public List<String> getProxyUrls() {
         ArrayList<String> out = new ArrayList<String>();
         for (SnapshotPage page : getPages()) {
-            if (page.page.trim().length() == 0) {
+            if (page.getPage().trim().length() == 0) {
                 continue;
             }
-            if (page.page.startsWith(webSite.getProxyUrl())) {
-                out.add(page.page.trim());
-            } else if (page.page.startsWith(webSite.getSrcUrl())) {
-                out.add(webSite.getProxyUrl() + page.page.substring(webSite.getSrcUrl().length()));
+            if (page.getPage().startsWith(webSite.getProxyUrl())) {
+                out.add(page.getPage().trim());
+            } else if (page.getPage().startsWith(webSite.getSrcUrl())) {
+                out.add(webSite.getProxyUrl() + page.getPage().substring(webSite.getSrcUrl().length()));
             } else if (!page.page.startsWith("http://") && !page.page.startsWith("https://")) {
-                out.add(webSite.getProxyUrl() + page.page);
+                out.add(webSite.getProxyUrl() + page.getPage());
             }
         }
         return out;

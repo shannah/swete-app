@@ -309,9 +309,13 @@ public class XFRecord {
      */
     private Date parseDate(Map m) {
         Result res = Result.fromContent(m);
+        if (res.get("unixtime") != null) {
+            System.out.println("Date "+m+" "+(new Date(res.getAsLong("unixtime") * 1000l)));
+            return new Date(res.getAsLong("unixtime") * 1000l);
+        }
         Calendar cal = Calendar.getInstance(client.getServerTimeZone());
         cal.set(Calendar.YEAR, res.getAsInteger("year"));
-        cal.set(Calendar.MONTH, res.getAsInteger("month"));
+        cal.set(Calendar.MONTH, res.getAsInteger("month")-1);
         cal.set(Calendar.DAY_OF_MONTH, res.getAsInteger("day"));
         cal.set(Calendar.HOUR_OF_DAY, res.getAsInteger("hours"));
         cal.set(Calendar.MINUTE, res.getAsInteger("minutes"));
@@ -383,6 +387,7 @@ public class XFRecord {
     }
     
     private String formatDateForServer(Date dt) {
+        if (true) return String.valueOf(dt.getTime()/1000l);
         Calendar cal = Calendar.getInstance(client.getServerTimeZone());
         cal.setTime(dt);
         return cal.get(Calendar.YEAR) + "-" + addLeadingZero(String.valueOf(cal.get(Calendar.MONTH)+1)) + "-" 

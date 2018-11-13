@@ -12,6 +12,7 @@ import com.codename1.io.ConnectionRequest;
 import com.codename1.io.NetworkManager;
 import com.codename1.io.Util;
 import com.codename1.ui.Button;
+import com.codename1.ui.CN;
 import com.codename1.ui.Container;
 import com.codename1.ui.Display;
 import com.codename1.ui.Font;
@@ -86,6 +87,7 @@ public class WhitelistSelectionDialog extends InteractionDialog {
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(BorderLayout.NORTH, filterField);
         getContentPane().add(BorderLayout.CENTER, resultsContainer);
+        CN.callSerially(()->updateResults());
     }
     
     
@@ -121,7 +123,7 @@ public class WhitelistSelectionDialog extends InteractionDialog {
             updating = false;
         }
         
-        revalidate();
+        revalidateWithAnimationSafety();
     }
     
     public void addActionListener(ActionListener l) {

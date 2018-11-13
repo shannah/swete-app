@@ -66,7 +66,7 @@ public class WebSitesMenu extends Container {
                 results.add(btn);
             }
         }
-        revalidate();
+        revalidateWithAnimationSafety();
     }
     
     public void addActionListener(ActionListener e) {

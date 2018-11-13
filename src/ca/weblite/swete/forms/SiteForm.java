@@ -14,6 +14,7 @@ import ca.weblite.swete.models.WebSite;
 import ca.weblite.swete.services.BackgroundJob;
 import ca.weblite.swete.services.JobQueue;
 import ca.weblite.swete.services.JobQueue.JobQueueListener;
+import ca.weblite.swete.util.BrowserUtil;
 import com.codename1.components.SplitPane;
 import com.codename1.components.Switch;
 import com.codename1.components.ToastBar;
@@ -104,7 +105,7 @@ public class SiteForm extends Form implements JobQueueListener {
         BrowserToolbar btoolbar = new BrowserToolbar();
         proxyBrowser.addWebEventListener("onLoad", e->{
             
-            String snapshotsCookie = getCookieAndWait(proxyBrowser, "--swete-static");
+            String snapshotsCookie = BrowserUtil.getCookieAndWait(proxyBrowser, "--swete-static");
             System.out.println("Snapshots cookie is "+snapshotsCookie);
             if (snapshotsCookie == null || !"true".equals(snapshotsCookie)) {
                 btoolbar.getSnapshotsSwitch().setOn();
@@ -112,7 +113,7 @@ public class SiteForm extends Form implements JobQueueListener {
                 btoolbar.getSnapshotsSwitch().setOff();
             }
             
-            String captureCookie = getCookieAndWait(proxyBrowser, "--swete-capture");
+            String captureCookie = BrowserUtil.getCookieAndWait(proxyBrowser, "--swete-capture");
             if ("1".equals(captureCookie)) {
                 btoolbar.getCaptureSwitch().setOn();
             } else {
@@ -126,17 +127,17 @@ public class SiteForm extends Form implements JobQueueListener {
         btoolbar.getCaptureSwitch().addActionListener(e->{
             Switch src = btoolbar.getCaptureSwitch();
             if (src.isOn()) {
-                startCapturing();
+                BrowserUtil.startCapturing(website, proxyBrowser);
             } else {
-                stopCapturing();
+                BrowserUtil.stopCapturing(website, proxyBrowser);
             }
         });
         btoolbar.getSnapshotsSwitch().addActionListener(e->{
             Switch src = btoolbar.getSnapshotsSwitch();
             if (src.isOn()) {
-                enableSnapshots();
+                BrowserUtil.enableSnapshots(proxyBrowser);
             } else {
-                disableSnapshots();
+                BrowserUtil.disableSnapshots(proxyBrowser);
             }
         });
         btoolbar.getOpenProxyInBrowser().addActionListener(e->{
@@ -165,157 +166,22 @@ public class SiteForm extends Form implements JobQueueListener {
     }
     
     
-    private void startCapturing() {
-        if (checkIfCaptureEnabled()) {
-            return;
-        }
-        String url = proxyBrowser.getURL();
-        Status status = ToastBar.getInstance().createStatus();
-        status.setMessage("Enabling String Capturing.  Please wait...");
-        status.show();
-        ActionListener onLoad = new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                proxyBrowser.removeWebEventListener("onLoad", this);
-                proxyBrowser.setURL(url);
-                status.clear();
-            }
-        };
-        proxyBrowser.addWebEventListener("onLoad", onLoad);
-        
-        proxyBrowser.setURL(website.getStartCaptureUrl());
-    }
-    
-    private void stopCapturing() {
-        if (!checkIfCaptureEnabled()) return;
-        String url = proxyBrowser.getURL();
-        Status status = ToastBar.getInstance().createStatus();
-        status.setMessage("Enabling String Capturing.  Please wait...");
-        status.show();
-        ActionListener onLoad = new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                proxyBrowser.removeWebEventListener("onLoad", this);
-                proxyBrowser.setURL(url);
-                status.clear();
-            }
-        };
-        proxyBrowser.addWebEventListener("onLoad", onLoad);
-        proxyBrowser.setURL(website.getStopCaptureUrl());
-    }
-    
-    private boolean checkIfSnapshotsEnabled() {
-        String val = getCookieAndWait(proxyBrowser, "--swete-static");
-        System.out.println("--swete-static value is "+val);
-        return (!"false".equals(val));
-        
-    }
-    
-    private boolean checkIfCaptureEnabled() {
-        String val = getCookieAndWait(proxyBrowser, "--swete-capture");
-        return "1".equals(val);
-    }
-    
-    private void enableSnapshots() {
-        if (checkIfSnapshotsEnabled()) {
-            return;
-        }
-        Status status = ToastBar.getInstance().createStatus();
-        status.setMessage("Enabling snapshots");
-        status.show();
-        eraseCookieAndWait(proxyBrowser, "--swete-static");
-        ActionListener onLoad = new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                proxyBrowser.removeWebEventListener("onLoad", this);
-                status.clear();
-            }
-        };
-        proxyBrowser.addWebEventListener("onLoad", onLoad);
-        proxyBrowser.reload();
-        
-    }
-    
-    private void disableSnapshots() {
-        if (!checkIfSnapshotsEnabled()) {
-            return;
-        }
-        Status status = ToastBar.getInstance().createStatus();
-        status.setMessage("Disabling snapshots");
-        status.show();
-        setCookieAndWait(proxyBrowser, "--swete-static", "false", 9999);
-        ActionListener onLoad = new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                proxyBrowser.removeWebEventListener("onLoad", this);
-                status.clear();
-            }
-        };
-        proxyBrowser.addWebEventListener("onLoad", onLoad);
-        proxyBrowser.reload();
-        
-    }
-    
-    private void setCookieAndWait(BrowserComponent cmp, String cookieName, String cookieValue, int days) {
-        String code = "function setCookie(name,value,days) {\n" +
-                "    var expires = \"\";\n" +
-                "    if (days) {\n" +
-                "        var date = new Date();\n" +
-                "        date.setTime(date.getTime() + (days*24*60*60*1000));\n" +
-                "        expires = \"; expires=\" + date.toUTCString();\n" +
-                "    }\n" +
-                "    document.cookie = name + \"=\" + (value || \"\")  + expires + \"; path=/\";\n" +
-                "}\n" +
-                "function eraseCookie(name) {   \n" +
-                "    document.cookie = name+'=; Max-Age=-99999999;';  \n" +
-                "}\n"
-                + "setCookie(${0}, ${1}, ${2}); callback.onSuccess(true)";
-        cmp.executeAndWait(code, new Object[]{cookieName, cookieValue, days});
-    }
-    
-    private String getCookieAndWait(BrowserComponent cmp, String cookieName) {
-        String code = "function getCookie(name) {\n" +
-                "    var nameEQ = name + \"=\";\n" +
-                "    var ca = document.cookie.split(';');\n" +
-                "    for(var i=0;i < ca.length;i++) {\n" +
-                "        var c = ca[i];\n" +
-                "        while (c.charAt(0)==' ') c = c.substring(1,c.length);\n" +
-                "        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);\n" +
-                "    }\n" +
-                "    return null;\n" +
-                "}\n"
-                + "callback.onSuccess(getCookie(${0}))";
-        return cmp.executeAndWait(code, new Object[]{cookieName}).getValue();
-    }
-    
-    private void eraseCookieAndWait(BrowserComponent cmp, String cookieName) {
-        String code = "function eraseCookie(name) {   \n" +
-                "    document.cookie = name+'=; Max-Age=-99999999;';  \n" +
-                "}\n"
-                + "eraseCookie(${0}); callback.onSuccess(true)";
-        cmp.executeAndWait(code, new Object[]{cookieName});
-    }
-
     @Override
     public void jobAdded(BackgroundJob job) {
         jobQueueProgressBar.setVisible(getJobQueue().getCurrentlyRunningJob() != null);
-        revalidate();
+        revalidateWithAnimationSafety();
     }
 
     @Override
     public void jobRemoved(BackgroundJob job) {
         jobQueueProgressBar.setVisible(getJobQueue().getCurrentlyRunningJob() != null);
-        revalidate();
+        revalidateWithAnimationSafety();
     }
 
     @Override
     public void jobChanged(BackgroundJob job) {
         jobQueueProgressBar.setVisible(getJobQueue().getCurrentlyRunningJob() != null);
-        revalidate();
+        revalidateWithAnimationSafety();
     }
 
     @Override
