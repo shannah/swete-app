@@ -5,6 +5,7 @@
  */
 package ca.weblite.swete.forms;
 
+import ca.weblite.swete.SweteApp;
 import ca.weblite.swete.SweteClient;
 import ca.weblite.swete.models.Settings;
 import ca.weblite.swete.models.WebSite;
@@ -18,12 +19,14 @@ import com.codename1.ui.Command;
 import com.codename1.ui.Component;
 import static com.codename1.ui.ComponentSelector.$;
 import com.codename1.ui.Container;
+import com.codename1.ui.Dialog;
 import com.codename1.ui.FontImage;
 import com.codename1.ui.Form;
 import com.codename1.ui.Toolbar;
 import com.codename1.ui.events.ActionEvent;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
+import com.codename1.ui.layouts.GridLayout;
 import java.io.IOException;
 
 /**
@@ -56,7 +59,7 @@ public class SiteMenuForm extends Form {
         setTitle(website.getName());
         
         
-        if (backForm != null) {
+        if (backForm != null && !SweteApp.getInstance().isSingleSiteMode()) {
             
             toolbar.setBackCommand(new Command("Back") {
                 public void actionPerformed(ActionEvent e) {
@@ -65,6 +68,8 @@ public class SiteMenuForm extends Form {
             });
         }
         
+        
+        /*
         getToolbar().addMaterialCommandToRightBar("", FontImage.MATERIAL_MORE_VERT, e->{
             InteractionDialog dlg = new InteractionDialog(BoxLayout.y());
             dlg.setDisposeWhenPointerOutOfBounds(true);
@@ -100,11 +105,11 @@ public class SiteMenuForm extends Form {
             
             
             dlg.showPopupDialog(getToolbar().findCommandComponent(e.getCommand()));
-        });
+        });*/
         
         
         MultiButton strings = new MultiButton();
-        strings.setTextLine1("String Management");
+        strings.setTextLine1("Translations");
         strings.setTextLine2("Manage site strings and translations");
         strings.setIcon(FontImage.createMaterial(FontImage.MATERIAL_TRANSLATE, strings.getStyle()));
         strings.setEmblem(FontImage.createMaterial(FontImage.MATERIAL_KEYBOARD_ARROW_RIGHT, strings.getStyle()));
@@ -113,7 +118,7 @@ public class SiteMenuForm extends Form {
         });
         
         MultiButton snapshots = new MultiButton();
-        snapshots.setTextLine1("Snapshot Management");
+        snapshots.setTextLine1("Snapshots");
         snapshots.setTextLine2("Manage site snapshots");
         snapshots.setIcon(FontImage.createMaterial(FontImage.MATERIAL_PHOTO_CAMERA, snapshots.getStyle()));
         snapshots.setEmblem(FontImage.createMaterial(FontImage.MATERIAL_KEYBOARD_ARROW_RIGHT, snapshots.getStyle()));
@@ -127,11 +132,49 @@ public class SiteMenuForm extends Form {
         preview.setIcon(FontImage.createMaterial(FontImage.MATERIAL_WEB, preview.getStyle()));
         preview.setEmblem(FontImage.createMaterial(FontImage.MATERIAL_KEYBOARD_ARROW_RIGHT, snapshots.getStyle()));
         preview.addActionListener(e->{
-            new PreviewForm(website, website.getProxyUrl()).show();
+            CN.callSerially(()->{
+                if (SweteApp.getInstance().getJobQueue().getCurrentlyRunningJob() != null) {
+                    Dialog.show("Preview Disabled", "The preview is currently disabled because there is a background job running.  Preview will be available once the job is completed", "OK", null);
+                    return;
+                }
+
+                new PreviewForm(website, website.getProxyUrl()).show();
+            });
+            
         });
+        
+        MultiButton openAdminDashboard = new MultiButton("Advanced");
+        openAdminDashboard.setTextLine2("Open Advanced settings");
+        openAdminDashboard.setIcon(FontImage.createMaterial(FontImage.MATERIAL_SECURITY, openAdminDashboard.getStyle()));
+        openAdminDashboard.setEmblem(FontImage.createMaterial(FontImage.MATERIAL_OPEN_IN_NEW, openAdminDashboard.getStyle()));
+        openAdminDashboard.addActionListener(e2->{
+            CN.execute(website.getAdminUrl());
+        });
+        
+        Button logout = new Button("Logout");
+        logout.setMaterialIcon(FontImage.MATERIAL_EXIT_TO_APP);
+        logout.addActionListener(e2->{
+            website.setPassword(null);
+            try {
+                Settings.getInstance().save();
+                SweteClient client = new SweteClient(website);
+                client.logout();
+            } catch (IOException ex) {
+                Log.e(ex);
+                ToastBar.showErrorMessage("Failed to log out: "+ex.getMessage());
+                return;
+            }
+            if (backForm != null && !SweteApp.getInstance().isSingleSiteMode()) {
+                backForm.showBack();
+            } else {
+                new LoggedOutForm(this, website).show();
+            }
+        });
+           
+        
         Container center = new Container(BoxLayout.y());
         center.setScrollableY(true);
-        center.add(strings).add(snapshots).add(preview);
+        center.add(strings).add(snapshots).add(preview).add(openAdminDashboard).add(logout);
         add(BorderLayout.CENTER, center);
     }
 }

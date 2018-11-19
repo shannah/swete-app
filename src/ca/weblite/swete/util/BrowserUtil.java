@@ -8,6 +8,7 @@ package ca.weblite.swete.util;
 import ca.weblite.swete.models.Snapshot;
 import ca.weblite.swete.models.WebSite;
 import com.codename1.components.ToastBar;
+import com.codename1.io.Log;
 import com.codename1.ui.BrowserComponent;
 import com.codename1.ui.events.ActionEvent;
 import com.codename1.ui.events.ActionListener;
@@ -25,11 +26,8 @@ public class BrowserUtil {
                 "        date.setTime(date.getTime() + (days*24*60*60*1000));\n" +
                 "        expires = \"; expires=\" + date.toUTCString();\n" +
                 "    }\n" +
-                "    document.cookie = name + \"=\" + (value || \"\")  + expires + \"; path=/\";\n" +
-                "}\n" +
-                "function eraseCookie(name) {   \n" +
-                "    document.cookie = name+'=; Max-Age=-99999999;';  \n" +
-                "}\n"
+                "    document.cookie = name + \"=\" + (value || \"\")  + expires + \"; path=/\"" +
+                "}\n" 
                 + "setCookie(${0}, ${1}, ${2}); callback.onSuccess(true)";
         cmp.executeAndWait(code, new Object[]{cookieName, cookieValue, days});
     }
@@ -51,51 +49,26 @@ public class BrowserUtil {
     
     public static void eraseCookieAndWait(BrowserComponent cmp, String cookieName) {
         String code = "function eraseCookie(name) {   \n" +
-                "    document.cookie = name+'=; Max-Age=-99999999;';  \n" +
+                "    document.cookie = name+'=; Max-Age=-99999999; path=/';  \ndocument.cookie = name+'=; Max-Age=-99999999';" +
                 "}\n"
                 + "eraseCookie(${0}); callback.onSuccess(true)";
         cmp.executeAndWait(code, new Object[]{cookieName});
     }
     
-    public static void startCapturing(WebSite website, BrowserComponent proxyBrowser) {
-        if (checkIfCaptureEnabled(proxyBrowser)) {
-            return;
-        }
-        String url = proxyBrowser.getURL();
-        ToastBar.Status status = ToastBar.getInstance().createStatus();
-        status.setMessage("Enabling String Capturing.  Please wait...");
-        status.show();
-        ActionListener onLoad = new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                proxyBrowser.removeWebEventListener("onLoad", this);
-                proxyBrowser.setURL(url);
-                status.clear();
-            }
-        };
-        proxyBrowser.addWebEventListener("onLoad", onLoad);
+    public static boolean startCapturing(WebSite website, BrowserComponent proxyBrowser) {
         
-        proxyBrowser.setURL(website.getStartCaptureUrl());
+        if (checkIfCaptureEnabled(proxyBrowser)) {
+            return false;
+        }
+        Log.p("Starting capturing... setting --swete-capture to 1");
+        setCookieAndWait(proxyBrowser, "--swete-capture", "1", 0);
+        return true;
     }
     
-    public static void stopCapturing(WebSite website, BrowserComponent proxyBrowser) {
-        if (!checkIfCaptureEnabled(proxyBrowser)) return;
-        String url = proxyBrowser.getURL();
-        ToastBar.Status status = ToastBar.getInstance().createStatus();
-        status.setMessage("Enabling String Capturing.  Please wait...");
-        status.show();
-        ActionListener onLoad = new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                proxyBrowser.removeWebEventListener("onLoad", this);
-                proxyBrowser.setURL(url);
-                status.clear();
-            }
-        };
-        proxyBrowser.addWebEventListener("onLoad", onLoad);
-        proxyBrowser.setURL(website.getStopCaptureUrl());
+    public static boolean stopCapturing(WebSite website, BrowserComponent proxyBrowser) {
+        if (!checkIfCaptureEnabled(proxyBrowser)) return false;
+        eraseCookieAndWait(proxyBrowser, "--swete-capture");
+        return true;
     }
     
     public static boolean checkIfSnapshotsEnabled(BrowserComponent proxyBrowser) {
@@ -120,11 +93,11 @@ public class BrowserUtil {
         return "1".equals(val);
     }
     
-    public static void enableSnapshots(BrowserComponent proxyBrowser) {
-        enableSnapshots(proxyBrowser, null);
+    public static boolean enableSnapshots(BrowserComponent proxyBrowser) {
+        return enableSnapshots(proxyBrowser, null);
     }
     
-    public static void enableSnapshots(BrowserComponent proxyBrowser, Snapshot snapshot) {
+    public static boolean enableSnapshots(BrowserComponent proxyBrowser, Snapshot snapshot) {
         if (checkIfSnapshotsEnabled(proxyBrowser)) {
             String snapId = getCookieAndWait(proxyBrowser, "--swete-snapshot-id");
             int snapIdInt = -1;
@@ -133,12 +106,10 @@ public class BrowserUtil {
                 
             } catch (Throwable t){}
             if (snapshot == null || (snapIdInt == snapshot.getSnapshotId())) {
-                return;
+                return false;
             }
         }
-        ToastBar.Status status = ToastBar.getInstance().createStatus();
-        status.setMessage("Enabling snapshots");
-        status.show();
+        
         BrowserUtil.eraseCookieAndWait(proxyBrowser, "--swete-static");
         if (snapshot != null) {
             BrowserUtil.setCookieAndWait(proxyBrowser, "--swete-snapshot-id", ""+snapshot.getSnapshotId(), 999);
@@ -146,38 +117,18 @@ public class BrowserUtil {
             BrowserUtil.eraseCookieAndWait(proxyBrowser, "--swete-snapshot-id");
         }
         
-        ActionListener onLoad = new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                proxyBrowser.removeWebEventListener("onLoad", this);
-                status.clear();
-            }
-        };
-        proxyBrowser.addWebEventListener("onLoad", onLoad);
-        proxyBrowser.reload();
+        return true;
         
     }
     
-    public static void disableSnapshots(BrowserComponent proxyBrowser) {
+    public static boolean disableSnapshots(BrowserComponent proxyBrowser) {
         if (!checkIfSnapshotsEnabled(proxyBrowser)) {
-            return;
+            return false;
         }
-        ToastBar.Status status = ToastBar.getInstance().createStatus();
-        status.setMessage("Disabling snapshots");
-        status.show();
+        
         BrowserUtil.setCookieAndWait(proxyBrowser, "--swete-static", "false", 9999);
         BrowserUtil.eraseCookieAndWait(proxyBrowser, "--swete-snapshot-id");
-        ActionListener onLoad = new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent evt) {
-                proxyBrowser.removeWebEventListener("onLoad", this);
-                status.clear();
-            }
-        };
-        proxyBrowser.addWebEventListener("onLoad", onLoad);
-        proxyBrowser.reload();
+        return true;
         
     }
     

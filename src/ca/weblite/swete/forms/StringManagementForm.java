@@ -59,13 +59,13 @@ public class StringManagementForm extends Form implements JobQueueListener {
                 }
             });
         }
-        
+        /*
         PopupMenu menu = new PopupMenu();
         menu.addCommand(Command.createMaterial("Crawl Site", FontImage.MATERIAL_WEB, e->{
             CN.callSerially(()->crawlSite());
         }));
         getToolbar().addCommandToRightBar(menu.getCommand());
-        
+        */
         center = new Container(BoxLayout.y());
         add(BorderLayout.CENTER, center);
         jobQueueProgressBar = new JobQueueProgressBar(SweteApp.getInstance().getJobQueue());
@@ -129,6 +129,7 @@ public class StringManagementForm extends Form implements JobQueueListener {
         openTranslationForm.setTextLine1("Open Translation Form");
         openTranslationForm.setTextLine2("No Filters");
         openTranslationForm.setIcon(FontImage.createMaterial(FontImage.MATERIAL_EDIT, openTranslationForm.getStyle()));
+        openTranslationForm.setEmblem(FontImage.createMaterial(FontImage.MATERIAL_OPEN_IN_NEW, openTranslationForm.getStyle()));
         openTranslationForm.addActionListener(e->{
             CN.execute(website.getAdminUrl()+"?-table=swete_strings&website_id="+website.getSiteId());
         });
@@ -137,12 +138,22 @@ public class StringManagementForm extends Form implements JobQueueListener {
         openTranslationForm2.setTextLine1("Open Translation Form");
         openTranslationForm2.setTextLine2("Filter: Untranslated Strings");
         openTranslationForm2.setIcon(FontImage.createMaterial(FontImage.MATERIAL_EDIT, openTranslationForm2.getStyle()));
+        openTranslationForm2.setEmblem(FontImage.createMaterial(FontImage.MATERIAL_OPEN_IN_NEW, openTranslationForm2.getStyle()));
         openTranslationForm2.addActionListener(e->{
             CN.execute(website.getAdminUrl()+"?-table=swete_strings&website_id="+website.getSiteId()+"&normalized_translation_value=%3D");
         });
         
+        MultiButton crawlSite = new MultiButton();
+        crawlSite.setTextLine1("Refresh Strings");
+        crawlSite.setTextLine2("Crawl the site to detect changes that require translation");
+        crawlSite.setIcon(FontImage.createMaterial(FontImage.MATERIAL_AUTORENEW, crawlSite.getStyle()));
+        crawlSite.addActionListener(e->{
+            CN.callSerially(()->crawlSite());
+        });
+        
         center.add(openTranslationForm);
         center.add(openTranslationForm2);
+        center.add(crawlSite);
         
         revalidateWithAnimationSafety();
         

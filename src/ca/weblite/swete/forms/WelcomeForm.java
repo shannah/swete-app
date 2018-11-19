@@ -5,6 +5,7 @@
  */
 package ca.weblite.swete.forms;
 
+import ca.weblite.swete.SweteApp;
 import ca.weblite.swete.components.WebSitesMenu;
 import ca.weblite.swete.models.Settings;
 import com.codename1.ui.Form;
@@ -25,6 +26,7 @@ public class WelcomeForm extends Form {
         menu.addActionListener(e->{
             //SiteForm siteForm = new SiteForm(menu.getSelectedWebSite());
             //siteForm.show();
+            //SweteApp.getInstance().startHtml(settings, menu.getSelectedWebSite());
             new SiteMenuForm(menu.getSelectedWebSite()).show();
         });
         add(BorderLayout.NORTH, new Label("Welcome to SWeTE"));

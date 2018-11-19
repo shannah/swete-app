@@ -24,6 +24,7 @@ import com.codename1.ui.TextArea;
 import com.codename1.ui.TextField;
 import com.codename1.ui.events.ActionEvent;
 import com.codename1.ui.events.ActionListener;
+import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
 import com.codename1.ui.util.EventDispatcher;
 import com.codename1.ui.util.UITimer;
@@ -35,6 +36,7 @@ import com.codename1.xml.XMLParser;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 
 import java.util.Map;
@@ -50,8 +52,52 @@ public class XFClient {
     private String password;
     private String url;
     private TimeZone serverTimeZone;
+    private List<XFClientListener> listeners;
+    
+    public static interface XFClientListener {
+        public void afterLoginSuccess(XFClient client);
+        public void afterLoginFail(XFClient client);
+    }
+    
+    public void addListener(XFClientListener l) {
+        if (listeners == null) listeners = new ArrayList<XFClientListener>();
+        listeners.add(l);
+    }
+    
+    public void removeListener(XFClientListener l) {
+        if (listeners != null) listeners.remove(l);
+    }
+    
+    private void fireAfterLoginSuccess() {
+        
+        if (!CN.isEdt()) {
+            CN.callSerially(()->fireAfterLoginSuccess());
+            return;
+        }
+        if (listeners != null) {
+            List<XFClientListener> toSend = new ArrayList<XFClientListener>(listeners);
+            for (XFClientListener l : toSend) {
+                l.afterLoginSuccess(this);
+            }
+        }
+    }
+    
+    private void fireAfterLoginFail() {
+        
+        if (!CN.isEdt()) {
+            CN.callSerially(()->fireAfterLoginFail());
+            return;
+        }
+        if (listeners != null) {
+            List<XFClientListener> toSend = new ArrayList<XFClientListener>(listeners);
+            for (XFClientListener l : toSend) {
+                l.afterLoginFail(this);
+            }
+        }
+    }
 
     EventDispatcher errorHandler;
+    
 
     public XFClient(String url) {
         this.url = url;
@@ -786,61 +832,76 @@ public class XFClient {
 
     protected void handleUnauthorized(boolean showPrompt, SuccessCallback<Boolean> onComplete) {
         if (showPrompt) {
-            Container loginCnt = new Container();
-            TextField usernameField = new TextField();
-            usernameField.setText(username);
-            
+            final TextField usernameField = new TextField();
+            final TextField passwordField = new TextField();
+            Command cmdLogin = new Command("Login");
+            Command cancel = new Command("Cancel");
+            Dialog dlg = new Dialog("Login", new BorderLayout()) {
+                {
+                    placeButtonCommands(new Command[]{cmdLogin, cancel});
+                    setDefaultCommand(cmdLogin);
+                    Container loginCnt = new Container();
+                    //TextField usernameField = new TextField();
+                    usernameField.setText(username);
+                    usernameField.setConstraint(TextField.EMAILADDR|TextField.USERNAME|TextField.NON_PREDICTIVE);
 
-            TextField passwordField = new TextField();
-            passwordField.setText(password);
-            passwordField.setConstraint(TextArea.PASSWORD);
 
-            usernameField.setNextFocusDown(passwordField);
-            
-            loginCnt.setLayout(new BoxLayout(BoxLayout.Y_AXIS));
-            loginCnt.addComponent(new Label("Username"));
-            loginCnt.addComponent(usernameField);
-            loginCnt.addComponent(new Label("Password"));
-            loginCnt.addComponent(passwordField);
+                    //TextField passwordField = new TextField();
+                    passwordField.setText(password);
+                    passwordField.setConstraint(TextArea.PASSWORD);
 
-            //boolean[] loggedIn = new boolean[1];
-            UITimer.timer(300, false, ()->{
-                usernameField.startEditingAsync();
-            });
-            
-            Command cmdLogin = new Command("Login") {
-                public void actionPerformed(ActionEvent e) {
-                    username = usernameField.getText();
-                    password = passwordField.getText();
-                    login(res -> {
-                        if (res) {
-                            System.out.println("1");
-                            onComplete.onSucess(res);
-                        } else {
-                            ToastBar.showErrorMessage("Login failed. Try again", 3000);
-                            handleUnauthorized(true, onComplete);
-                        }
-                        //loggedIn[0] = res;
-                    });
+                    usernameField.setNextFocusDown(passwordField);
 
-                    //Preferences.set("username", usernameField.getText());
-                    //Preferences.set("password", passwordField.getText());
+                    loginCnt.setLayout(new BoxLayout(BoxLayout.Y_AXIS));
+                    loginCnt.addComponent(new Label("Username"));
+                    loginCnt.addComponent(usernameField);
+                    loginCnt.addComponent(new Label("Password"));
+                    loginCnt.addComponent(passwordField);
+
+                    //boolean[] loggedIn = new boolean[1];
+                    //UITimer.timer(300, false, ()->{
+                    //    usernameField.startEditingAsync();
+                    //});
+                    add(BorderLayout.CENTER, loginCnt);
                 }
-            };
-            
-            //usernameField.addActionListener(cmdLogin);
-            //passwordField.addActionListener(cmdLogin);
-            
-            
-            Dialog.show("Login", loginCnt, new Command[]{
-                cmdLogin,
-                new Command("Cancel") {
-                    public void actionPerformed(ActionEvent e) {
-                        onComplete.onSucess(false);
+
+                @Override
+                protected void onShowCompleted() {
+                    super.onShowCompleted();
+                    if (usernameField.getText().isEmpty()) {
+                        usernameField.startEditingAsync();
+                    } else {
+                        passwordField.startEditingAsync();
                     }
                 }
-
-            });
+                
+                
+                
+            };
+            
+            
+           
+            
+            Command result = dlg.showDialog();
+            
+            if (result == cmdLogin) {
+                username = usernameField.getText();
+                password = passwordField.getText();
+                login(res -> {
+                    if (res) {
+                        System.out.println("1");
+                        fireAfterLoginSuccess();
+                        onComplete.onSucess(res);
+                    } else {
+                        fireAfterLoginFail();
+                        ToastBar.showErrorMessage("Login failed. Try again", 3000);
+                        handleUnauthorized(true, onComplete);
+                    }
+                    //loggedIn[0] = res;
+                });
+            } else {
+                onComplete.onSucess(false);
+            }
             
             //nComplete.onSucess(loggedIn[0]);
 

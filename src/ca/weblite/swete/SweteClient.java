@@ -5,6 +5,7 @@
  */
 package ca.weblite.swete;
 
+import ca.weblite.swete.models.Settings;
 import ca.weblite.swete.models.Snapshot;
 import ca.weblite.swete.models.Snapshot.PageStatus;
 import ca.weblite.swete.models.Snapshot.SnapshotPage;
@@ -20,6 +21,7 @@ import com.codename1.processing.Result;
 import com.codename1.ui.CN;
 import com.codename1.util.regex.RE;
 import com.xataface.query.XFClient;
+import com.xataface.query.XFClient.XFClientListener;
 import com.xataface.query.XFCustomAction;
 import com.xataface.query.XFQuery;
 import com.xataface.query.XFRecord;
@@ -42,9 +44,35 @@ public class SweteClient {
     private XFClient xfClient;
     private WebSite site;
     
+    private final XFClientListener clientListener = new XFClientListener() {
+        @Override
+        public void afterLoginSuccess(XFClient client) {
+            site.setUserName(client.getUsername());
+            site.setPassword(client.getPassword());
+            try {
+                if (Settings.getInstance().getWebSites().contains(site)) {
+                    Settings.getInstance().save();
+                }
+            } catch (IOException ioe) {
+                Log.p("Failed to save username and password after login");
+                Log.e(ioe);
+            }
+        }
+
+        @Override
+        public void afterLoginFail(XFClient client) {
+            
+        }
+        
+    };
+    
     public SweteClient(WebSite site) {
         this.site = site;
         xfClient = new XFClient(site.getAdminUrl());
+        xfClient.setUsername(site.getUserName());
+        xfClient.setPassword(site.getPassword());
+        xfClient.addListener(clientListener);
+        
     }
     
     public boolean validateAdminUrl() {
@@ -111,7 +139,7 @@ public class SweteClient {
         xfClient.setPassword(site.getPassword());
         
         
-        System.out.println("Proxy URL host is "+proxyUrl.getHost());
+        //System.out.println("Proxy URL host is "+proxyUrl.getHost());
         XFQuery query = new XFQuery("websites")
                 .findOne()
                 .matches("active", "1")
@@ -318,7 +346,9 @@ public class SweteClient {
                     continue;
                 }
                 System.out.println("Checking line "+line);
-                
+                if (statusMap == null) {
+                    statusMap = new HashMap();
+                }
                 Map status = (Map)statusMap.get(line);
                 if (status == null) {
                     status = (Map)statusMap.get(site.getProxyUrl()+line);

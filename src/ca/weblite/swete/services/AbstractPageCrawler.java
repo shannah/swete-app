@@ -139,6 +139,8 @@ public abstract class AbstractPageCrawler implements BackgroundJob {
                     Log.e(ex);
                     urls = new String[0];
                 }
+            } else {
+                urls = site.getWhitelist();
             }
         }
         return urls;

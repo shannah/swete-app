@@ -21,6 +21,7 @@ import com.codename1.ui.CN;
 import com.codename1.ui.Command;
 import com.codename1.ui.Component;
 import static com.codename1.ui.ComponentSelector.$;
+import com.codename1.ui.Dialog;
 import com.codename1.ui.FontImage;
 import com.codename1.ui.Form;
 import com.codename1.ui.TextField;
@@ -125,27 +126,29 @@ public class PreviewForm extends Form {
         status.setMessage("Loading "+url);
         status.setShowProgressIndicator(true);
         status.show();
+        loadingStatus = status;
         browser.addWebEventListener("onLoad", e->{
-            status.clear();
+            if (loadingStatus != null) {
+                loadingStatus.clear();
+            }
             urlField.setText(browser.getURL());
+            boolean requireRefresh = false;
+            String message = "Refreshing page";
             if (snapshot != null) {
-                if (!BrowserUtil.checkIfSnapshotEnabled(browser, snapshot)) {
-                    if (snapshot != null) {
-                        ToastBar.showMessage("Activating snapshot "+snapshot.getSnapshotId(), FontImage.MATERIAL_INFO, 3000);
-                    } else {
-                        ToastBar.showMessage("Activating snapshot", FontImage.MATERIAL_INFO, 3000);
-                    }
-                    BrowserUtil.enableSnapshots(browser, snapshot);
-                }
-                if (BrowserUtil.checkIfCaptureEnabled(browser)) {
-                    ToastBar.showMessage("Disabling string capture", FontImage.MATERIAL_INFO, 3000);
-                    BrowserUtil.stopCapturing(site, browser);
-                }
+                requireRefresh  = requireRefresh || BrowserUtil.enableSnapshots(browser, snapshot);
+                requireRefresh = requireRefresh || BrowserUtil.stopCapturing(site, browser);
+                message = "Activating snapshot "+snapshot.getSnapshotId()+".  Please wait...";
+                
             } else {
-                if (BrowserUtil.checkIfSnapshotsEnabled(browser)) {
-                    ToastBar.showMessage("Deactivating snapshots", FontImage.MATERIAL_INFO, 3000);
-                    BrowserUtil.disableSnapshots(browser);
-                }
+                requireRefresh = requireRefresh || BrowserUtil.disableSnapshots(browser);
+                message = "Disabling snapshots.  Please wait...";
+            }
+            
+            if (requireRefresh) {
+                loadingStatus = ToastBar.getInstance().createStatus();
+                loadingStatus.setMessage(message);
+                loadingStatus.show();
+                CN.callSerially(()->browser.reload());
             }
         });
         urlField.addActionListener(e->{
@@ -159,6 +162,8 @@ public class PreviewForm extends Form {
         
     }
 
+    ToastBar.Status loadingStatus;
+    
     @Override
     protected void onShowCompleted() {
         super.onShowCompleted(); 
@@ -186,11 +191,22 @@ public class PreviewForm extends Form {
     private void changeSnapshot(Snapshot snap) {
         this.snapshot = snap;
         if (snapshot == null) {
-            BrowserUtil.disableSnapshots(browser);
+            if (BrowserUtil.disableSnapshots(browser)) {
+                loadingStatus = ToastBar.getInstance().createStatus();
+                loadingStatus.setMessage("Disabling snapshots.  Please wait...");
+                loadingStatus.show();
+                browser.reload();
+            }
             getToolbar().findCommandComponent(snapshotsMenu.getCommand()).setText("Snapshot: None");
         } else {
-            BrowserUtil.enableSnapshots(browser, snap);
+            if (BrowserUtil.enableSnapshots(browser, snap)) {
+                loadingStatus = ToastBar.getInstance().createStatus();
+                loadingStatus.setMessage("Activating snapshot "+snap.getSnapshotId()+".  Please wait...");
+                loadingStatus.show();
+                browser.reload();
+            }
             getToolbar().findCommandComponent(snapshotsMenu.getCommand()).setText("Snapshot: "+snap.getSnapshotId());
+            
         }
         
    }

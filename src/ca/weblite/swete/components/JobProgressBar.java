@@ -40,6 +40,7 @@ public class JobProgressBar extends Container implements ActionListener {
             CN.callSerially(()->cancel());
         });
         add(description).add(progressLabel).add(BorderLayout.center(progressBar).add(BorderLayout.EAST, cancelButton));
+        update();
         
     }
     

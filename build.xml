@@ -349,7 +349,7 @@
             vendor="${codename1.vendor}"
             subtitle="${codename1.secondaryTitle}"
             
-            targetType="javascript"
+            targetType="debug_javascript_steve"
             automated="${automated}"
             />
     </target>    
@@ -388,7 +388,7 @@
             subtitle="${codename1.secondaryTitle}"
             certificate="${codename1.desktop.mac.certificate}"
             certPassword="${codename1.desktop.mac.certificatePassword}"
-            targetType="desktop_macosx"
+            targetType="debug_desktop_macosx_steve"
             automated="${automated}"
             />
         <delete>
@@ -471,6 +471,7 @@
     </target>
 
     <target name="-post-jar">
+        <echoproperties/>
         <mkdir dir="native/javase" />
         <mkdir dir="native/internal_tmp" />
         <mkdir dir="lib/impl/native/javase" />
@@ -478,8 +479,9 @@
             encoding="${source.encoding}"
             source="1.8"
             target="1.8"
-            bootclasspath="CLDC11.jar" excludes="${excludes}"
-            classpath="${javac.classpath}:${build.classes.dir}">
+            excludes="${excludes}"
+            bootclasspath="${platforms.JDK_1.8.bootclasspath}"
+            classpath="${run.classpath.without.build.classes.dir}:${build.classes.dir}">
             <src path="native/javase"/>
             <src path="lib/impl/native/javase"/>
         </javac>        

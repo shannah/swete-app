@@ -7,6 +7,7 @@ package ca.weblite.swete.services;
 
 import ca.weblite.swete.models.WebSite;
 import com.codename1.io.ConnectionRequest;
+import com.codename1.io.Log;
 
 /**
  *
@@ -20,6 +21,7 @@ public class CapturePageCrawler extends AbstractPageCrawler {
 
     @Override
     protected RequestResult sendRequest(String url) {
+        Log.p("Sending request for url "+url);
         return new RequestResult(client.requestPageWithCapturing(url).getResponseCode());
     }
 
