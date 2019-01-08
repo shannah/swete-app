@@ -7,6 +7,7 @@ package ca.weblite.swete.forms;
 
 import ca.weblite.swete.SweteClient;
 import ca.weblite.swete.components.JobProgressBar;
+import ca.weblite.swete.components.PopupMenu;
 import ca.weblite.swete.models.Snapshot;
 import ca.weblite.swete.models.Snapshot.PageStatus;
 import ca.weblite.swete.models.Snapshot.SnapshotPage;
@@ -99,6 +100,49 @@ public class SnapshotForm extends Form {
     
     
     private Component createPageRow(SnapshotPage page) {
+        Container out = new Container(new BorderLayout(), "SnapshotFormPageRow");
+        Label name = new Label(page.getPage(), "SnapshotFormPageRowName");
+        Label responseCode = new Label("", "SnapshotFormPageRowResponseCode");
+        Label lastUpdate = new Label("", "SnapshotFormPageRowLastUpdate");
+        if (page.getStatus() != null) {
+            PageStatus status = page.getStatus();
+            if (status.getStatusCode() <= 0) {
+                responseCode.setText("Queued");
+            } else {
+                responseCode.setText("Response code: "+status.getStatusCode());
+                if (status.getTimestamp() != null) {
+                    lastUpdate.setText(new DateUtil().getTimeAgo(status.getTimestamp()));
+                }
+            }
+            
+        }
+        
+        PopupMenu menu = new PopupMenu();
+        menu.setMaterialIcon(FontImage.MATERIAL_MORE_VERT);
+        
+        Command preview = new Command("Preview") {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                new PreviewForm(snapshot, snapshot.getWebSite().getProxyUrlForPage(page.getPage())).show();
+            }
+            
+        };
+        menu.addCommand(preview);
+        
+        Command update = new Command("Update") {
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                new UpdatePageSnapshotForm(snapshot, snapshot.getWebSite().getProxyUrlForPage(page.getPage())).show();
+            }
+            
+        };
+        menu.addCommand(update);
+        out.add(BorderLayout.CENTER, BoxLayout.encloseY(name, responseCode, lastUpdate));
+        out.add(BorderLayout.EAST, new Button(menu.getCommand()));
+        return out;
+    }
+    
+    private Component createPageRow_old(SnapshotPage page) {
         MultiButton out = new MultiButton();
         out.setEmblem(FontImage.createMaterial(FontImage.MATERIAL_ARROW_FORWARD, out.getStyle()));
         out.addActionListener(e->{

@@ -45,7 +45,7 @@
     
     <target depends="-do-test-run" description="Run unit tests." name="test"/>
 
-    <target name="-pre-compile">
+    <target name="-pre-compile" depends="-cn1-compile-css">
         <echo>Compile is forcing compliance to the supported API's/features for maximum device compatibility. This allows smaller
         code size and wider device support</echo>
         <mkdir dir="build/tmp"/>
@@ -552,5 +552,13 @@
                 
     <target name="webservice-wizard">
         <java classpath="CodeNameOneBuildClient.jar" classname="com.codename1.ws.wizard.WSWizard" dir="." fork="true" />
+    </target>
+<target name="-cn1-compile-css" if="codename1.cssTheme">
+        <java jar="${user.home}/.codenameone/designer_1.jar" failonerror="true">
+            <jvmarg value="-Dcli=true"/>
+            <arg value="-css"/>
+            <arg file="css/theme.css"/>
+            <arg file="src/theme.res"/>
+        </java>
     </target>
 </project>

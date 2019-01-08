@@ -1,0 +1,37 @@
+#Constants {
+    includeNativeBool: true; 
+}
+
+SnapshotFormPageRow {
+    background-color: white;
+    border-top: 1pt solid #d9d9d9;
+}
+
+SnapshotFormPageRowName {
+    font-family: 'native:MainRegular';
+    font-size: 3mm;
+    color: #5e5e5e;
+}
+
+SnapshotFormPageRowResponseCode {
+    font-family: 'native:MainLight';
+    font-size: 2.5mm;
+    color: #757980;
+}
+
+SnapshotFormPageRowLastUpdate {
+    font-family: 'native:MainLight';
+    font-size: 2mm;
+    color: #757980;
+}
+
+UpdateSnapshotUpdateNowButton {
+    background-color: #80bd30;
+    color: white;
+    font-size: 4mm;
+    border: 1pt solid #80bd30;
+    border-radius: 1.5mm;
+    margin: 2.5mm;
+    padding: 2.5mm;
+    
+}
