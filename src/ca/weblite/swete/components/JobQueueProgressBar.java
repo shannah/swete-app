@@ -27,7 +27,7 @@ public class JobQueueProgressBar extends Container implements JobQueueListener {
     private Label description;
     
     private JobQueue queue;
-    
+    private JobQueueDialog dialog;
     public JobQueueProgressBar(JobQueue queue) {
         super(new BorderLayout());
         this.queue = queue;
@@ -39,7 +39,12 @@ public class JobQueueProgressBar extends Container implements JobQueueListener {
         moreButton.setMaterialIcon(FontImage.MATERIAL_INFO);
         moreButton.setCursor(Component.HAND_CURSOR);
         moreButton.addActionListener(e->{
-            JobQueueDialog dialog = new JobQueueDialog(queue);
+            if (dialog != null && dialog.isShowing()) {
+                dialog.dispose();
+                dialog = null;
+                return;
+            }
+            dialog = new JobQueueDialog(queue);
             dialog.showPopupDialog(moreButton);
         });
         
@@ -61,22 +66,25 @@ public class JobQueueProgressBar extends Container implements JobQueueListener {
             progress.setVisible(false);
             progress.setInfinite(true);
         }
-        revalidateWithAnimationSafety();
+        //revalidateWithAnimationSafety();
     }
     
     @Override
     public void jobAdded(BackgroundJob job) {
         update();
+        revalidateWithAnimationSafety();
     }
 
     @Override
     public void jobRemoved(BackgroundJob job) {
         update();
+        revalidateWithAnimationSafety();
     }
 
     @Override
     public void jobChanged(BackgroundJob job) {
         update();
+        revalidateWithAnimationSafety();
     }
 
     @Override

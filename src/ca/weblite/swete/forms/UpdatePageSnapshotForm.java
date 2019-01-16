@@ -11,6 +11,7 @@ import ca.weblite.swete.components.WhitelistSelectionDialog;
 import ca.weblite.swete.models.Snapshot;
 import ca.weblite.swete.models.WebSite;
 import ca.weblite.swete.util.BrowserUtil;
+import ca.weblite.swete.util.SnapshotUtil;
 import com.codename1.components.InteractionDialog;
 import com.codename1.components.SpanLabel;
 import com.codename1.components.ToastBar;
@@ -161,22 +162,7 @@ public class UpdatePageSnapshotForm extends Form {
     
     private void updateNow() {
         
-        SweteClient client = new SweteClient(snapshot.getWebSite());
-        ToastBar.Status status = ToastBar.getInstance().createStatus();
-        status.setMessage("Creating snapshot");
-        status.setShowProgressIndicator(true);
-        status.show();
-        boolean success = false;
-        try {
-            client.refreshPageSnapshotAndWait(url, snapshot);
-            success = true;
-        } catch (IOException ex) {
-            ToastBar.showErrorMessage("Failed to update snapshot: "+ex.getMessage());
-            Log.e(ex);
-        } finally {
-            status.clear();
-        }
-        
+        boolean success = SnapshotUtil.recrawlPageSnapshotInfiniteBlocking(snapshot, url);
         if (success) {
             backForm.showBack();
         }

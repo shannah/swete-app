@@ -35,3 +35,176 @@ UpdateSnapshotUpdateNowButton {
     padding: 2.5mm;
     
 }
+
+PreviewFormUntranslatedButton {
+    font-size: 2mm;
+    color: white;
+}
+
+CheckBox {
+    font-family: "native:MainThin";
+    font-size: 2.5mm;
+}
+
+SnapshotFormRowButton {
+    background-color: transparent;
+    text-align: center;
+    font-family: 'native:MainLight';
+    font-size: 2.5mm;
+    border-radius: 0.5mm;
+    padding: 2mm;
+    border: 1pt solid #7c7d8c;
+    color: #eaeaf3;
+}
+
+SnapshotFormRowButton.pressed {
+    background-color: #454655;
+}
+
+ChangedStatusButton, UnscannedStatusButton, UnchangedStatusButton, CompleteStatusButton, IncompleteStatusButton, MovedStatusButton {
+    font-size: 2mm;
+    font-family: 'native:MainRegular';
+    background-color: #ebebeb;
+    border: 1px cn1-pill-border #ebebeb;
+    color: #555555;
+    padding: 0;
+    padding-left: 2mm;
+    padding-right: 2mm;
+}
+
+CompleteStatusButton {
+    background-color: #38761e;
+    border: 1px cn1-pill-border #38761e;
+    color: white;
+}
+
+IncompleteStatusButton {
+    background-color: #f5c331;
+    border: 1px cn1-pill-border #f5c331;
+    color: black;
+}
+
+
+
+UnscannedStatusButton {
+    background-color: #f55d31;
+    border: 1px cn1-pill-border #f55d31;
+    color: white;
+}
+
+UnchangedStatusButton {
+    background-color: #6bcdfd;
+    border: 1px cn1-pill-border #6bcdfd;
+    color: white;
+}
+
+ChangedStatusButton {
+    background-color: #eb6444;
+    border: 1px cn1-pill-border #eb6444;
+    color: white;
+}
+
+ChangedOnlyCheckbox, UnchangedOnlyCheckbox, CompleteOnlyCheckbox, IncompleteOnlyCheckbox {
+    border: 1px cn1-pill-border #eb6444;
+    color: white;
+    font-family: 'native:MainRegular';
+    font-size: 2.5mm;
+    padding: 0;
+    padding-left: 2.5mm;
+    padding-right: 2.5mm;
+}
+
+ChangedOnlyCheckbox {
+    border: 1px cn1-pill-border #eb6444;
+    background-color: #eb6444;
+    
+}
+UnchangedOnlyCheckbox {
+    border: 1px cn1-pill-border #6bcdfd;
+    background-color: #6bcdfd;
+    
+}
+CompleteOnlyCheckbox {
+    border: 1px cn1-pill-border #38761e;
+    background-color: #38761e;
+    
+}
+IncompleteOnlyCheckbox {
+    border: 1px cn1-pill-border #f5c331;
+    background-color: #f5c331;
+    
+}
+
+
+SnapshotFormSearch {
+    background-color: white;
+    border: 1pt solid white;
+    border-radius: 1.5mm;
+    color: #222222;
+    margin: 2.5mm;
+}
+
+SearchBar {
+    background-color: #f3f3f3;
+    border-bottom: 1pt solid #e4e6e7
+}
+
+SnapshotFormHeading {
+    font-family: 'native:MainRegular';
+    font-size: 3.5mm;
+    color: black;
+    border-bottom: 1pt solid #cccccc;
+}
+
+SnapshotFormPageRow {
+    margin:0;
+}
+
+SnapshotDetailsCnt, LastCrawlCnt {
+    margin: 2.5mm;
+    background-color: #344546;
+    border-radius: 2.5mm;
+    border: 1pt solid #344546;
+}
+
+SnapshotRowContentPane {
+    background-color: #141627;
+}
+
+DarkH3 {
+    font-family: 'native:MainRegular';
+    font-size: 2.5mm;
+    color: white;
+    border-bottom: 1pt dotted #f1f2f3;
+}
+
+DarkLabel {
+    font-family: 'native:MainLight';
+    font-size: 2mm;
+    color: #f1f1f1;
+}
+
+DarkValue {
+    font-family: 'native:MainRegular';
+    font-size: 2.5mm;
+    color: white;
+}
+
+PopupDialog {
+    border: 1pt solid #cacaca;
+    border-radius: 0.5mm;
+    background-color: #f9fbfc;
+
+    box-shadow: 5pt 5pt 5pt 0px rgba(0,0,0,0.75);
+}
+
+PopupDialogTitle {
+    font-family: 'native:MainRegular';
+    font-size: 3mm;
+    /*margin:0;*/
+    padding: 2.5mm;
+    margin-right: 13pt;
+    border: 1pt solid #cccccc;
+    background-color: #f3f3f3;
+    /*box-shadow: 5pt 0 5pt 0px rgba(0,0,0,0.75);*/
+}

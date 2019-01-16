@@ -11,3 +11,5 @@ CodeNameOneBuildClient.jar
 dependencies/*
 !dependencies/empty
 .DS_Store
+*.bak
+Versions.properties

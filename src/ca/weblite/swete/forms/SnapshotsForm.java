@@ -14,6 +14,7 @@ import ca.weblite.swete.services.BackgroundJob;
 import ca.weblite.swete.services.JobQueue;
 import ca.weblite.swete.services.JobQueue.JobQueueListener;
 import ca.weblite.swete.services.RefreshSnapshotPageCrawler;
+import ca.weblite.swete.util.SnapshotUtil;
 import com.codename1.components.InfiniteProgress;
 import com.codename1.components.InteractionDialog;
 import com.codename1.components.ToastBar;
@@ -191,67 +192,17 @@ public class SnapshotsForm extends com.codename1.ui.Form implements JobQueueList
     }
     
     private void createNewSnapshot() {
-        SweteClient client = new SweteClient(website);
-        ToastBar.Status status = ToastBar.getInstance().createStatus();
-        status.setMessage("Creating snapshot");
-        status.setShowProgressIndicator(true);
-        status.show();
-        try {
-            Snapshot snapshot = client.createNewSnapshot();
-            refresh();
-            RefreshSnapshotPageCrawler crawler = new RefreshSnapshotPageCrawler(snapshot);
-            crawler.setJobDescription("Refreshing Snapshot "+snapshot.getSnapshotId());
-            SweteApp.getInstance().getJobQueue().add(crawler);
-            
-        } catch (IOException ex) {
-            ToastBar.showErrorMessage("Failed to create snapshot: "+ex.getMessage());
-            Log.e(ex);
-        } finally {
-            status.clear();
-        }
+        SnapshotUtil.createNewSnapshot(website);
+        refresh();
     }
     
     private void activeCheckBoxClicked(CheckBox active, Snapshot snapshot) {
-        SweteClient client = new SweteClient(website);
-        if (active.isSelected()) {
-            if (website.getCurrentSnapshotId() == null || website.getCurrentSnapshotId() != snapshot.getSnapshotId()) {
-                Integer old = website.getCurrentSnapshotId();
-                website.setCurrentSnapshotId(snapshot.getSnapshotId());
-                Status status = ToastBar.getInstance().createStatus();
-                status.setShowProgressIndicator(true);
-                status.show();
-
-                try {
-                    client.save(website);
-                    
-                } catch (IOException ex) {
-                    website.setCurrentSnapshotId(old);
-                    active.setSelected(false);
-                    Log.e(ex);
-                    return;
-                } finally {
-                    status.clear();
-                }
-                refresh();
-            }
-        } else {
-            website.setCurrentSnapshotId(-1);
-            Status status = ToastBar.getInstance().createStatus();
-            status.setShowProgressIndicator(true);
-            status.show();
-
-            try {
-                client.save(website);
-
-            } catch (IOException ex) {
-                active.setSelected(true);
-                Log.e(ex);
-                return;
-            } finally {
-                status.clear();
-            }
-            refresh();
+        boolean res = SnapshotUtil.setActiveSnapshot(snapshot, active.isSelected());
+        if (res != active.isSelected()) {
+            active.setSelected(res);
         }
+        refresh();
+        
     }
 
     private void updateSnapshotJobProgress() {

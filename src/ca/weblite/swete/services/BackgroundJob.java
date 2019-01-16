@@ -13,6 +13,41 @@ import com.codename1.ui.events.ActionListener;
  */
 public interface BackgroundJob extends Runnable {
     public static class RequestStatus {
+
+        /**
+         * @return the proxyUrl
+         */
+        public String getProxyUrl() {
+            return proxyUrl;
+        }
+
+        /**
+         * @return the complete
+         */
+        public boolean isComplete() {
+            return complete;
+        }
+
+        /**
+         * @return the inProgress
+         */
+        public boolean isInProgress() {
+            return inProgress;
+        }
+
+        /**
+         * @return the responseCode
+         */
+        public int getResponseCode() {
+            return responseCode;
+        }
+
+        /**
+         * @return the errorMessage
+         */
+        public String getErrorMessage() {
+            return errorMessage;
+        }
         
         String proxyUrl;
         boolean complete;

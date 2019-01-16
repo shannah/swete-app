@@ -50,7 +50,7 @@ public class XFUIViewFactory implements XFUIRecordList.ViewFactory, XFUIProperti
         InfiniteScrollAdapter infiniteScroll = InfiniteScrollAdapter.createInfiniteScroll(root, () -> {
             if (lastSet[0].getFound() > lastSet[0].getSkip() + lastSet[0].getLimit()) {
                 XFQuery nextQuery = lastSet[0].getQuery().getNextQuery();
-                System.out.println("About to query with limit " + nextQuery.getLimit() + " and skip " + nextQuery.getSkip());
+                //System.out.println("About to query with limit " + nextQuery.getLimit() + " and skip " + nextQuery.getSkip());
                 client.find(nextQuery, newResult -> {
                     if (newResult == null) {
                         return;

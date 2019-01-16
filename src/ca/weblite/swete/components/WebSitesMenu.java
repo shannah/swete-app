@@ -66,7 +66,7 @@ public class WebSitesMenu extends Container {
                 results.add(btn);
             }
         }
-        revalidateWithAnimationSafety();
+        //revalidateWithAnimationSafety();
     }
     
     public void addActionListener(ActionListener e) {
@@ -88,6 +88,7 @@ public class WebSitesMenu extends Container {
             if (selectedUrl != null) {
                 if (settings.addWebSiteWithURL(selectedUrl)) {
                     updateResults();
+                    revalidateWithAnimationSafety();
                 } else {
                     ToastBar.showErrorMessage("Failed to add website: "+settings.getValidationFailure().getMessage());
                 }

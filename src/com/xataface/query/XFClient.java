@@ -382,7 +382,7 @@ public class XFClient {
                 JSONParser jp = new JSONParser();
                 try {
                     Map<String, Object> result = jp.parseJSON(new InputStreamReader(new ByteArrayInputStream(req.getResponseData()), "UTF-8"));
-                    System.out.println(result);
+                    //System.out.println(result);
                     List<Map> results = (List<Map>) result.get("results");
                     XFRowSet rowset = new XFRowSet();
                     rowset.setTable(query.getTable());
@@ -642,7 +642,7 @@ public class XFClient {
                 Display.getInstance().scheduleBackgroundTask(() -> {
                     JSONParser jp = new JSONParser();
                     try {
-                        System.out.println(new String(req.getResponseData(), "UTF-8"));
+                        //System.out.println(new String(req.getResponseData(), "UTF-8"));
                         Map<String, Object> result = jp.parseJSON(new InputStreamReader(new ByteArrayInputStream(req.getResponseData()), "UTF-8"));
                         Map results = (Map) result.get("record_data");
                         XFRecord rec = new XFRecord(this, record.getTable(), Result.fromContent(results), results.keySet());
@@ -777,7 +777,7 @@ public class XFClient {
         c.addResponseListener(e -> {
             System.out.println("Response code: " + c.getResponseCode());
             try {
-                System.out.println("Content: " + new String(c.getResponseData(), "Utf-8"));
+                //System.out.println("Content: " + new String(c.getResponseData(), "Utf-8"));
             } catch (Exception ex) {
             }
             if (e.getResponseCode() == 401) {

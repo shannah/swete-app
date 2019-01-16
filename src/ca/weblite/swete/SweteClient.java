@@ -11,6 +11,7 @@ import ca.weblite.swete.models.Snapshot.PageStatus;
 import ca.weblite.swete.models.Snapshot.SnapshotPage;
 import ca.weblite.swete.models.TranslationStats;
 import ca.weblite.swete.models.WebSite;
+import ca.weblite.swete.models.WebpageStatus;
 import com.codename1.io.ConnectionRequest;
 import com.codename1.io.JSONParser;
 import com.codename1.io.Log;
@@ -43,6 +44,22 @@ import java.util.Map;
 public class SweteClient {
     private XFClient xfClient;
     private WebSite site;
+    private static final String[] WEBPAGE_STATUS_COLS = new String[]{
+        "response_status_code", 
+                        "response_content_type", 
+                        "page_url", 
+                        "webpage_status_id", 
+                        "last_checked", 
+                        "num_translation_misses", 
+                        "response_status_code", 
+                        "response_content_type", 
+                        "response_status_code", 
+                        "response_content_type", 
+                        "last_response_body_change", 
+                        "last_output_content_change",
+                        "last_translations_change",
+                        "translations_checksum"
+    };
     
     private final XFClientListener clientListener = new XFClientListener() {
         @Override
@@ -192,15 +209,62 @@ public class SweteClient {
         }
     }
     
+    public WebpageStatus loadWebpageStatus(String url) throws IOException {
+        
+        XFQuery q = new XFQuery("webpage_status")
+                .matches("website_id", site.getSiteId())
+                .matches("page_url", url)
+                .select(WEBPAGE_STATUS_COLS)
+                .findOne();
+        XFRowSet results = xfClient.findAndWait(q);
+        List<WebpageStatus> out = new ArrayList<WebpageStatus>();
+        for (XFRecord rec : results) {
+            return newWebpageStatus(rec);
+        }
+        return null;
+    }
+    
+    public WebpageStatus[] loadWebpageStatuses() throws IOException {
+        
+        XFQuery q = new XFQuery("webpage_status")
+                .matches("website_id", site.getSiteId())
+                .select(WEBPAGE_STATUS_COLS)
+                .limit(999)
+                .findAll();
+        XFRowSet results = xfClient.findAndWait(q);
+        List<WebpageStatus> out = new ArrayList<WebpageStatus>();
+        for (XFRecord rec : results) {
+            out.add(newWebpageStatus(rec));
+        }
+        return out.toArray(new WebpageStatus[out.size()]);
+    }
+    
+    private WebpageStatus newWebpageStatus(XFRecord rec) {
+        WebpageStatus s = new WebpageStatus();
+        s.setLastChecked(rec.getDate("last_checked"));
+        s.setUrl(rec.getString("page_url"));
+        s.setWebpageStatusId(rec.getLong("webpage_status_id"));
+        s.setNumUntranslatedStrings(rec.getInt("num_translation_misses"));
+        s.setSite(site);
+        s.setResponseCode(rec.getInt("response_status_code"));
+        s.setContentType(rec.getString("response_content_type"));
+        s.setLastOutputContentChange(rec.getDate("last_output_content_change"));
+        s.setLastResponseBodyChange(rec.getDate("last_response_body_change"));
+        s.setLastTranslationsChange(rec.getDate("last_translations_change"));
+        s.setTranslationsChecksum(rec.getString("translations_checksum"));
+        return s;
+    }
     
     public ConnectionRequest requestPageWithCapturing(String url) {
         ConnectionRequest req = new ConnectionRequest();
+        req.setPost(false);
+        req.setHttpMethod("GET");
         req.setUrl(url);
         req.setCookiesEnabled(false);
         req.addRequestHeader("Cookie", "--swete-capture=1");
         req.setFailSilently(true);
         req.setReadResponseForErrors(true);
-        req.setFollowRedirects(true);
+        req.setFollowRedirects(false);
         req.setCacheMode(ConnectionRequest.CachingMode.OFF);
         NetworkManager.getInstance().addToQueueAndWait(req);
         return req;
@@ -345,17 +409,18 @@ public class SweteClient {
                 if (line.isEmpty()) {
                     continue;
                 }
-                System.out.println("Checking line "+line);
+                //System.out.println("Checking line "+line);
                 if (statusMap == null) {
                     statusMap = new HashMap();
                 }
                 Map status = (Map)statusMap.get(line);
-                if (status == null) {
-                    status = (Map)statusMap.get(site.getProxyUrl()+line);
-                }
                 if (status == null && "/".equals(line)) {
                     status = (Map)statusMap.get(site.getProxyUrl());
                 }
+                if (status == null) {
+                    status = (Map)statusMap.get(site.getProxyUrl()+line);
+                }
+                
                 if (status == null) {
                     status = new HashMap();
                 }
@@ -363,6 +428,9 @@ public class SweteClient {
                 long timestamp = status.containsKey("timestamp") && status.get("statusCode") != null ? ((Number)status.get("timestamp")).longValue() * 1000l : 0;
                 String statusString = status.containsKey("statusString") ? (String)status.get("statusString") : null;
                 SnapshotPage page = new SnapshotPage(line, new PageStatus(statusCode, statusString, new Date(timestamp)));
+                
+                String translationsChecksum = status.containsKey("translations_checksum") ? (String)status.get("translations_checksum") : null;
+                page.setTranslationsChecksum(translationsChecksum);
                 pages.add(page);
             }
         }

@@ -32,9 +32,11 @@ public class RefreshSnapshotPageCrawler extends AbstractPageCrawler {
             Log.e(ex);
             fireException(ex);
         }
-        List<String> urls = snapshot.getProxyUrls();
-        
-        setURLs(urls.toArray(new String[urls.size()]));
+        if (getURLs() == null) {
+            List<String> urls = snapshot.getProxyUrls();
+
+            setURLs(urls.toArray(new String[urls.size()]));
+        }
 
     }
 

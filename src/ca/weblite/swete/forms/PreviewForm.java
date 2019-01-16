@@ -10,17 +10,22 @@ import ca.weblite.swete.components.PopupMenu;
 import ca.weblite.swete.components.WhitelistSelectionDialog;
 import ca.weblite.swete.models.Snapshot;
 import ca.weblite.swete.models.WebSite;
+import ca.weblite.swete.models.WebpageStatus;
 import ca.weblite.swete.util.BrowserUtil;
 import com.codename1.components.InteractionDialog;
+import com.codename1.components.SpanLabel;
 import com.codename1.components.ToastBar;
 import com.codename1.components.ToastBar.Status;
 import com.codename1.io.Log;
 import com.codename1.ui.BrowserComponent;
 import com.codename1.ui.Button;
 import com.codename1.ui.CN;
+import static com.codename1.ui.CN.callSerially;
+import com.codename1.ui.CheckBox;
 import com.codename1.ui.Command;
 import com.codename1.ui.Component;
 import static com.codename1.ui.ComponentSelector.$;
+import com.codename1.ui.Container;
 import com.codename1.ui.Dialog;
 import com.codename1.ui.FontImage;
 import com.codename1.ui.Form;
@@ -29,6 +34,8 @@ import com.codename1.ui.Toolbar;
 import com.codename1.ui.events.ActionEvent;
 import com.codename1.ui.layouts.BorderLayout;
 import com.codename1.ui.layouts.BoxLayout;
+import com.codename1.ui.layouts.FlowLayout;
+import com.codename1.ui.plaf.RoundBorder;
 import java.io.IOException;
 
 /**
@@ -44,6 +51,8 @@ public class PreviewForm extends Form {
     private PopupMenu snapshotsMenu;
     private TextField urlField;
     private Button showWhitelistButton;
+    private WebpageStatus webpageStatus;
+    private Button untranslatedButton;
     
     public PreviewForm(Snapshot snap, String url) {
         super(new BorderLayout());
@@ -83,6 +92,7 @@ public class PreviewForm extends Form {
             });
         }
         
+       
         urlField = new TextField();
         showWhitelistButton = new Button();
         showWhitelistButton.setMaterialIcon(FontImage.MATERIAL_ARROW_DROP_DOWN);
@@ -94,6 +104,104 @@ public class PreviewForm extends Form {
             });
             dialog.showPopupDialog(showWhitelistButton);
         });
+        
+        Command showNumUntranslatedCommand = new Command("")  {
+            public void actionPerformed(ActionEvent evt) {
+                if (untranslatedButton == null) {
+                    return;
+                }
+
+                InteractionDialog dlg = new InteractionDialog();
+                dlg.setLayout(new BorderLayout());
+                dlg.setDisposeWhenPointerOutOfBounds(true);
+                if (webpageStatus != null) {
+                    Container cnt = new Container(BoxLayout.y());
+                    cnt.add(new SpanLabel("This page has "+webpageStatus.getNumUntranslatedStrings()+" untranslated strings"));
+                    
+                    Button openTranslationForm = new Button("Open Translation Form");
+                    CheckBox showOnlyUntranslated = new CheckBox("Only Untranslated");
+                    openTranslationForm.addActionListener(e2->{
+                        String tfUrl = site.getAdminUrl()+"?-table=webpage_status&-action=swete_translate_page&webpage_status_id="+webpageStatus.getWebpageStatusId();
+                        if (showOnlyUntranslated.isSelected()) {
+                            tfUrl += "&--untranslated-only=1";
+                        }
+                        CN.execute(tfUrl);
+                    });
+                    cnt.add(FlowLayout.encloseCenter(openTranslationForm, showOnlyUntranslated));
+                    dlg.add(BorderLayout.CENTER, cnt);
+                } else {
+                    ToastBar.showErrorMessage("This page has no recorded status yet", 5000);
+                }
+                dlg.showPopupDialog(untranslatedButton);
+            }
+        };
+        getToolbar().addCommandToRightBar(showNumUntranslatedCommand);
+        untranslatedButton = getToolbar().findCommandComponent(showNumUntranslatedCommand);
+        untranslatedButton.setUIID("PreviewFormUntranslatedButton");
+        
+        
+        Command takeSnapshot = new Command("") {
+            public void actionPerformed(ActionEvent e) {
+                Command ok = new Command("Update");
+                Command cancel = new Command("Cancel");
+                
+                Command res = Dialog.show("Update Snapshot", new SpanLabel("Add this page to the current snapshot?"), ok, cancel);
+                if (res == ok) {
+                    SweteClient client = new SweteClient(snapshot.getWebSite());
+                    ToastBar.Status status = ToastBar.getInstance().createStatus();
+                    status.setMessage("Creating snapshot");
+                    status.setShowProgressIndicator(true);
+                    status.show();
+                    
+                    
+                    try {
+                        client.loadSnapshots(site);
+                    } catch (IOException ex) {
+                        Log.e(ex);
+                        status.clear();
+                        ToastBar.showErrorMessage("Failed to refresh snapshots: "+ex.getMessage());
+                        return;
+                    }
+                    
+                    Snapshot liveSnap = null;
+                    for (Snapshot snap : site.getSnapshots()) {
+                        
+                        if (snap.isActive()) {
+                            break;
+                        } else {
+                            if (liveSnap == null || liveSnap.getDateCompleted() == null || (snap.getDateCompleted() != null && snap.getDateCompleted().getTime() > liveSnap.getDateCompleted().getTime())) {
+                                liveSnap = snap;
+                            }
+                        }
+                    }
+                    
+                    if (liveSnap == null) {
+                        status.clear();
+                        ToastBar.showErrorMessage("Failed to create snapshot because no applicable site snapshot was found.");
+                        return;
+                    }
+                    
+                    boolean success = false;
+                    try {
+                        client.refreshPageSnapshotAndWait(PreviewForm.this.url, liveSnap);
+                        success = true;
+                    } catch (IOException ex) {
+                        ToastBar.showErrorMessage("Failed to update snapshot: "+ex.getMessage());
+                        Log.e(ex);
+                    } finally {
+                        status.clear();
+                    }
+                    
+                    ToastBar.showMessage("Page snapshot successfully created in site snapshot "+liveSnap.getSnapshotId() , FontImage.MATERIAL_CHECK);
+                }
+            }
+        };
+        
+        getToolbar().addCommandToRightBar(takeSnapshot);
+        Button takeSnapshotButton = getToolbar().findCommandComponent(takeSnapshot);
+        takeSnapshotButton.setMaterialIcon(FontImage.MATERIAL_PHOTO_CAMERA);
+        
+        
         
         PopupMenu menu = new PopupMenu();
         menu.addCommand(Command.createMaterial("Open Source Page in Browser", FontImage.MATERIAL_OPEN_IN_BROWSER, e->{
@@ -117,7 +225,6 @@ public class PreviewForm extends Form {
         if (allowChangeSnapshot) {
             getToolbar().addCommandToLeftBar(snapshotsMenu.getCommand());
         }
-        
         this.site = website;
         
         this.url = url;
@@ -131,6 +238,11 @@ public class PreviewForm extends Form {
             if (loadingStatus != null) {
                 loadingStatus.clear();
             }
+            
+            this.url = browser.getURL();
+            this.webpageStatus = null;
+            updateUntranslatedButton();
+            
             urlField.setText(browser.getURL());
             boolean requireRefresh = false;
             String message = "Refreshing page";
@@ -164,6 +276,8 @@ public class PreviewForm extends Form {
 
     ToastBar.Status loadingStatus;
     
+    
+    
     @Override
     protected void onShowCompleted() {
         super.onShowCompleted(); 
@@ -171,6 +285,52 @@ public class PreviewForm extends Form {
     }
     
     
+    private static WebpageStatus unknownStatus = new WebpageStatus();
+    
+    private void refreshWebpageStatus() throws IOException {
+        SweteClient client = new SweteClient(site);
+        this.webpageStatus = client.loadWebpageStatus(this.url);
+        if (this.webpageStatus == null) {
+            this.webpageStatus = unknownStatus;
+        }
+        updateUntranslatedButton();
+    }
+        
+
+    
+    
+    private void updateUntranslatedButton() {
+        if (this.webpageStatus == null) {
+            
+            callSerially(()->{
+                try {
+                    refreshWebpageStatus();
+                } catch (IOException ex) {
+                    Log.e(ex);
+                    ToastBar.showErrorMessage("Failed to refresh webpage status for url "+url+".  "+ex.getMessage());
+                }
+            });
+            return;
+        }
+        String oldText = untranslatedButton.getText();
+        int oldCount = -1;
+        if (oldText.length() > 0) {
+            oldCount = Integer.parseInt(oldText);
+        }
+        untranslatedButton.setText(String.valueOf(webpageStatus.getNumUntranslatedStrings()));
+        int newCount = oldCount;
+        String newText = untranslatedButton.getText();
+        if (newText.length() > 0) {
+            newCount = Integer.parseInt(newText);
+        }
+        
+        if (oldCount <= 0 && newCount > 0) {
+            untranslatedButton.getAllStyles().setBorder(RoundBorder.create().color(0xe43238));
+        } else if (oldCount > 0 && newCount <= 0) {
+            untranslatedButton.getAllStyles().setBorder(RoundBorder.create().color(0x7fba00));
+        }
+        revalidateWithAnimationSafety();
+    }
     
     private void refreshSnapshots() {
         snapshotsMenu.removeAllCommands();

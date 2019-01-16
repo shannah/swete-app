@@ -310,7 +310,7 @@ public class XFRecord {
     private Date parseDate(Map m) {
         Result res = Result.fromContent(m);
         if (res.get("unixtime") != null) {
-            System.out.println("Date "+m+" "+(new Date(res.getAsLong("unixtime") * 1000l)));
+            //System.out.println("Date "+m+" "+(new Date(res.getAsLong("unixtime") * 1000l)));
             return new Date(res.getAsLong("unixtime") * 1000l);
         }
         Calendar cal = Calendar.getInstance(client.getServerTimeZone());

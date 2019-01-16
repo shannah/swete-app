@@ -76,7 +76,7 @@ public class JobProgressBar extends Container implements ActionListener {
             progressBar.setVisible(false);
         }
         
-        revalidateWithAnimationSafety();
+        //revalidateWithAnimationSafety();
 
     }
 
@@ -84,6 +84,7 @@ public class JobProgressBar extends Container implements ActionListener {
     public void actionPerformed(ActionEvent evt) {
         if (evt.getSource() == job) {
             update();
+            revalidateWithAnimationSafety();
             if (job.isCancelled() || job.isComplete()) {
                 job.removeProgressListener(this);
             }

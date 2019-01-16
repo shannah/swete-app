@@ -97,7 +97,7 @@ public abstract class AbstractPageCrawler implements BackgroundJob {
                 currentRequest = status;
                 status.inProgress = true;
                 listeners.fireActionEvent(new ActionEvent(this));
-                RequestResult req = sendRequest(status.proxyUrl);
+                RequestResult req = sendRequest(status.getProxyUrl());
                 status.responseCode = req.getResponseCode();
                 status.complete = true;
                 status.inProgress = false;
@@ -168,7 +168,7 @@ public abstract class AbstractPageCrawler implements BackgroundJob {
     public int getComplete() {
         int count = 0;
         for (RequestStatus status : statuses) {
-            if (status.complete) count++;
+            if (status.isComplete()) count++;
             else break;
         }
         return count;
@@ -178,8 +178,8 @@ public abstract class AbstractPageCrawler implements BackgroundJob {
     public int getSucceeded() {
         int count = 0;
         for (RequestStatus status : statuses) {
-            if (status.complete) {
-                if (status.responseCode >= 200 && status.responseCode < 300) {
+            if (status.isComplete()) {
+                if (status.getResponseCode() >= 200 && status.getResponseCode() < 300) {
                     count++;
                 }
             } else {

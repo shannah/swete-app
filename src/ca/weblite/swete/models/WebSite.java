@@ -172,7 +172,11 @@ public class WebSite implements Externalizable {
         } else if (srcUrl.startsWith(this.proxyUrl)) {
             return srcUrl;
         } else {
-            return this.proxyUrl + srcUrl;
+            String out = this.proxyUrl + srcUrl;
+            if (out.endsWith("//")) {
+                return out.substring(0, out.length()-1);
+            }
+            return out;
         }
     }
     
@@ -182,7 +186,11 @@ public class WebSite implements Externalizable {
         } else if (srcUrl.startsWith(this.srcUrl)) {
             return srcUrl;
         } else {
-            return this.srcUrl + srcUrl;
+            String out = this.srcUrl + srcUrl;
+            if (out.endsWith("//")) {
+                return out.substring(0, out.length()-1);
+            }
+            return out;
         }
     }
     
