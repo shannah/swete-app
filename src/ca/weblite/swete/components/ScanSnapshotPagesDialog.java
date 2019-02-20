@@ -60,6 +60,7 @@ public class ScanSnapshotPagesDialog extends Dialog {
         Container wrapper = new Container(BoxLayout.y());
         wrapper.setScrollableY(false);
         wrapper.setPreferredW(CN.convertToPixels(100f));
+        wrapper.setPreferredH(CN.convertToPixels(100f));
         description.setText("Scan the pages of this snapshot.  This will crawl the pages of the site one at a time, scanning them for changes.  This will take some time (approx 2-3 seconds per page).");
         wrapper.add(description);
         
@@ -115,7 +116,7 @@ public class ScanSnapshotPagesDialog extends Dialog {
     
     
     public boolean showScanDialog() {
-        Command res = showPacked(BorderLayout.CENTER, true);
+        Command res = this.showDialog();
         return res == startScanCommand;
     }
 

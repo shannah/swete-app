@@ -15,8 +15,20 @@ import com.codename1.ui.FontImage;
  * @author shannah
  */
 public class URLButton extends Button {
+    
     public URLButton(String url) {
-        super(FontImage.MATERIAL_OPEN_IN_BROWSER);
+        this(url, null, "Button");
+    }
+    
+    public URLButton(String url, String label) {
+        this(url, label, "Button");
+    }
+    
+    public URLButton(String url, String label, String uiid) {
+        super(FontImage.MATERIAL_OPEN_IN_BROWSER, uiid);
+        if (label != null) {
+            setText(label);
+        }
         if (url != null) {
             addActionListener(e->{
                 try {

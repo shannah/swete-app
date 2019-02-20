@@ -169,8 +169,8 @@ public class SnapshotsForm extends com.codename1.ui.Form implements JobQueueList
         associateSnapshot(progress, snapshot);
 
         active.setSelected(website.getCurrentSnapshotId() != null && website.getCurrentSnapshotId() == snapshot.getSnapshotId());
-        Button detailsButton = new Button();
-        detailsButton.setMaterialIcon(FontImage.MATERIAL_INFO);
+        Button detailsButton = new Button("Manage Snapshot");
+        detailsButton.setMaterialIcon(FontImage.MATERIAL_SETTINGS);
         
         detailsButton.addActionListener(e->{
             CN.callSerially(()->{

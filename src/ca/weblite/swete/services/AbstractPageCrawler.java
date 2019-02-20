@@ -131,16 +131,17 @@ public abstract class AbstractPageCrawler implements BackgroundJob {
                 try {
                     site.setWhitelist(client.loadWhitelist());
                     urls = site.getWhitelist();
-                    int len = urls.length;
-                    for (int i=0; i<len; i++) {
-                        urls[i] = site.getProxyUrlForPage(urls[i]);
-                    }
+                    
                 } catch (IOException ex) {
                     Log.e(ex);
                     urls = new String[0];
                 }
             } else {
                 urls = site.getWhitelist();
+            }
+            int len = urls.length;
+            for (int i=0; i<len; i++) {
+                urls[i] = site.getProxyUrlForPage(urls[i]);
             }
         }
         return urls;

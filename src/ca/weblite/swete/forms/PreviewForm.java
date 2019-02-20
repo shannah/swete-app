@@ -63,6 +63,15 @@ public class PreviewForm extends Form {
         
     }
     
+    public PreviewForm(WebSite site, Snapshot snap, String url) {
+        super(new BorderLayout());
+        snapshot = snap;
+        allowChangeSnapshot = false;
+        init(site, url);
+        
+        
+    }
+    
     public PreviewForm(WebSite site, String url) {
         super(new BorderLayout());
         allowChangeSnapshot = true;

@@ -15,6 +15,6 @@ import ca.weblite.swete.models.WebSite;
  */
 public class Dispatcher {
     public static void previewPage(WebSite website, Snapshot snapshot, String url) {
-        new PreviewForm(snapshot, website.getProxyUrlForPage(url)).show();
+        new PreviewForm(website, snapshot, website.getProxyUrlForPage(url)).show();
     }
 }

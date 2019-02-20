@@ -262,6 +262,7 @@ public class SweteClient {
         req.setUrl(url);
         req.setCookiesEnabled(false);
         req.addRequestHeader("Cookie", "--swete-capture=1");
+        req.addRequestHeader("Cache-Control", "no-cache, max-age=0, s-maxage=0");
         req.setFailSilently(true);
         req.setReadResponseForErrors(true);
         req.setFollowRedirects(false);
@@ -275,6 +276,7 @@ public class SweteClient {
         req.setUrl(url);
         req.setCookiesEnabled(false);
         req.addRequestHeader("Cookie", "--swete-static=false");
+        req.addRequestHeader("Cache-Control", "no-cache, max-age=0, s-maxage=0");
         req.setFailSilently(true);
         req.setReadResponseForErrors(true);
         req.setFollowRedirects(true);

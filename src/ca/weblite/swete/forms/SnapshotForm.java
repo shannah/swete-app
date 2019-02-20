@@ -20,6 +20,7 @@ import ca.weblite.swete.models.Snapshot.PageStatus;
 import ca.weblite.swete.models.Snapshot.SnapshotPage;
 import ca.weblite.swete.models.WebSite;
 import ca.weblite.swete.models.WebpageStatus;
+import ca.weblite.swete.services.AbstractPageCrawler;
 import ca.weblite.swete.services.BackgroundJob;
 import ca.weblite.swete.services.BackgroundJob.RequestStatus;
 import ca.weblite.swete.services.CapturePageCrawler;
@@ -377,7 +378,7 @@ public class SnapshotForm extends Form implements JobQueueListener {
                     .append(new Label("Untranslated strings", "DarkLabel"))
                     .append(encloseX(
                             new Label(String.valueOf(lastCrawl.getNumUntranslatedStrings()), "DarkValue"),
-                            new URLButton(lastCrawl.getUntranslatedStringsURL())
+                            new URLButton(lastCrawl.getUntranslatedStringsURL(), "Edit Translations", "SnapshotFormRowButton")
                     ))
                     .build();
             Button crawlPreviewBtn = new Button("Preview", "SnapshotFormRowButton");
@@ -423,6 +424,7 @@ public class SnapshotForm extends Form implements JobQueueListener {
         }
         out.add(BorderLayout.NORTH, north);
         Container grid = GridLayout.encloseIn(2, snapshotCnt, lastCrawlCnt);
+        $(grid).addTags("grid");
         grid.setUIID("SnapshotRowContentPane");
         name.addActionListener(e->{
             if (!grid.isHidden()) {
@@ -541,6 +543,7 @@ public class SnapshotForm extends Form implements JobQueueListener {
             if (parent == null) {
                 return;
             }
+            $("grid", newRow).setHidden($("grid", pageRow).isHidden());
             parent.replace(pageRow, newRow, null);
             if (pageRow instanceof Container) {
                 ((Container)pageRow).revalidateWithAnimationSafety();
@@ -554,10 +557,11 @@ public class SnapshotForm extends Form implements JobQueueListener {
 
         @Override
         public void previewPage(Snapshot snapshot, String url) {
-            if (snapshot == null) {
-                snapshot = SnapshotForm.this.snapshot;
-            }
-            Dispatcher.previewPage(snapshot.getWebSite(), snapshot, url);
+            Dispatcher.previewPage(
+                    SnapshotForm.this.snapshot.getWebSite(), 
+                    snapshot, 
+                    url
+            );
         }
 
         @Override
@@ -646,6 +650,9 @@ public class SnapshotForm extends Form implements JobQueueListener {
     }
     
     private int findStatusIndexForUrl(String url) {
+        if (webpages == null) {
+            return -1;
+        }
         int len = webpages.length;
         for (int i=0; i < len; i++) {
             if (webpages[i] == null) {
@@ -659,10 +666,15 @@ public class SnapshotForm extends Form implements JobQueueListener {
     }
     
     private void refreshPageStatus(String url) {
+        if (webpages == null) {
+            return;
+        }
         System.out.println("Refreshing page status for "+url);
+        
         Component pageRow = findPageRow(url);
         SweteClient client = new SweteClient(snapshot.getWebSite());
         try {
+            refreshWithNoUIStuff(url); // To refresh the snapshot page status
             WebpageStatus ws = client.loadWebpageStatus(url);
             if (ws != null) {
                 int oldStatusIndex = findStatusIndexForUrl(url);
@@ -690,8 +702,8 @@ public class SnapshotForm extends Form implements JobQueueListener {
     
     @Override
     public void jobChanged(BackgroundJob job) {
-        if (job instanceof CapturePageCrawler) {
-            CapturePageCrawler crawler = (CapturePageCrawler)job;
+        if (job instanceof AbstractPageCrawler) {
+            AbstractPageCrawler crawler = (AbstractPageCrawler)job;
             RequestStatus currentRequest = crawler.getCurrentRequest();
             if (currentRequest != null && currentRequest.isComplete()) {
                 String url = currentRequest.getProxyUrl();
